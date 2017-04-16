@@ -39,6 +39,11 @@ public class Administrator {
         initialiseConnection();
     }
     
+    protected static Administrator getIntance() {
+        if(INSTANCE == null) INSTANCE = new Administrator();
+        return INSTANCE;
+    }
+    
     private void initialiseConnection() {
         try {
             String serverAddress = com.jogjadamai.infest.service.ConfigurationReader.getConfiguration("serveraddress");
@@ -51,10 +56,21 @@ public class Administrator {
             java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
     }
-    
-    protected static Administrator getIntance() {
-        if(INSTANCE == null) INSTANCE = new Administrator();
-        return INSTANCE;
+
+    protected void signIn(com.jogjadamai.infest.administrator.SignInGUI frame) {
+        String password = "";
+        for (char character : frame.passwordField.getPassword()) {
+            password = password + character;
+        }
+        Integer[] securityNumber = {
+            java.util.Arrays.hashCode(frame.usernameField.getText().getBytes()), 
+            java.util.Arrays.hashCode(password.getBytes())
+        };
+        if(Program.authenticate(securityNumber)) {
+            frame.setVisible(false);
+        } else {
+            javax.swing.JOptionPane.showMessageDialog(frame, "Sign In Failed! Either username or password is wrong.", "Infest Authentication System", javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     protected Boolean readAllFeatures(com.jogjadamai.infest.administrator.MainGUI frame) {

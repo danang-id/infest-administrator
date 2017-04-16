@@ -219,15 +219,15 @@ public final class SignInGUI extends javax.swing.JFrame implements Runnable {
 
     
     private void signInButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        login();
+        administrator.signIn(this);
     }  
     
     private void usernameFieldActionPerformed(java.awt.event.ActionEvent evt) {
-        login();
+        administrator.signIn(this);
     }  
     
     private void passwordFieldActionPerformed(java.awt.event.ActionEvent evt) {
-        login();
+        administrator.signIn(this);
     }  
     
     private void exitButtonActionPerformed(java.awt.event.ActionEvent evt) { 
@@ -241,35 +241,21 @@ public final class SignInGUI extends javax.swing.JFrame implements Runnable {
     private javax.swing.JLabel infestLogo;
     private javax.swing.JLayeredPane layeredPane;
     private javax.swing.JButton signInButton;
-    private javax.swing.JPasswordField passwordField;
+    protected javax.swing.JPasswordField passwordField;
     private javax.swing.JLabel passwordFieldBackground;
     private javax.swing.JLabel passwordIcon;
-    private javax.swing.JTextField usernameField;
+    protected javax.swing.JTextField usernameField;
     private javax.swing.JLabel usernameFieldBackground;
     private javax.swing.JLabel usernameIcon;
+    protected com.jogjadamai.infest.administrator.Administrator administrator;
     // End of variables declaration  
 
     @Override
     public void run() {
+        administrator = Administrator.getIntance();
         getContentPane().setBackground(new java.awt.Color(0x651112));
         setLocationRelativeTo(null);
         setVisible(true);
-    }
-
-    private void login() {
-        String password = "";
-        for (char character : this.passwordField.getPassword()) {
-            password = password + character;
-        }
-        Integer[] securityNumber = {
-            java.util.Arrays.hashCode(this.usernameField.getText().getBytes()), 
-            java.util.Arrays.hashCode(password.getBytes())
-        };
-        if(Program.authenticate(securityNumber)) {
-            this.setVisible(false);
-        } else {
-            javax.swing.JOptionPane.showMessageDialog(this, "Login Failed! Either username or password is wrong.", "Infest Login", javax.swing.JOptionPane.ERROR_MESSAGE);
-        }
     }
     
 }
