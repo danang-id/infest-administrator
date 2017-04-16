@@ -254,7 +254,7 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
     }
     
     private void formWindowClosed(java.awt.event.WindowEvent evt) {                                  
-        Program.showLoginView();
+        Program.showSignInGUI();
     } 
     
     // Variables declaration - do not modify                     

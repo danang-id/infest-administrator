@@ -16,18 +16,18 @@
 package com.jogjadamai.infest.administrator;
 
 /**
- * <h1>class <code>LoginView</code></h1>
- * <p><code>LoginView</code> is <code>javax.swing.JFrame</code> class defining
- * the Login Graphical User Interface of the application.</p>
+ * <h1>class <code>SignInGUI</code></h1>
+ * <p><code>SignInGUI</code> is <code>javax.swing.JFrame</code> class defining
+ * the Sign In Graphical User Interface of the application.</p>
  * <br>
  * <p><b><i>Coded, built, and packaged with passion by Danang Galuh Tegar P for Infest.</i></b></p>
  * 
  * @author Danang Galuh Tegar P
  * @version 2017.03.10.0001
  */
-public final class LoginView extends javax.swing.JFrame implements Runnable {
+public final class SignInGUI extends javax.swing.JFrame implements Runnable {
 
-    public LoginView() {
+    public SignInGUI() {
         try {
             javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
@@ -46,7 +46,7 @@ public final class LoginView extends javax.swing.JFrame implements Runnable {
         passwordIcon = new javax.swing.JLabel();
         usernameField = new javax.swing.JTextField();
         passwordField = new javax.swing.JPasswordField();
-        loginButton = new javax.swing.JButton();
+        signInButton = new javax.swing.JButton();
         infestLogo = new javax.swing.JLabel();
         clientLabel = new javax.swing.JLabel();
         exitButton = new javax.swing.JButton();
@@ -131,10 +131,10 @@ public final class LoginView extends javax.swing.JFrame implements Runnable {
         layeredPane.setLayer(passwordField, javax.swing.JLayeredPane.PALETTE_LAYER);
         layeredPane.add(passwordField, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 57, 250, 25));
 
-        loginButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/jogjadamai/infest/assets/LoginButton.png"))); // NOI18N
-        loginButton.setBorder(null);
-        loginButton.setDoubleBuffered(true);
-        loginButton.addActionListener(this::loginButtonActionPerformed);
+        signInButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/jogjadamai/infest/assets/SignInButton.png"))); // NOI18N
+        signInButton.setBorder(null);
+        signInButton.setDoubleBuffered(true);
+        signInButton.addActionListener(this::loginButtonActionPerformed);
 
         infestLogo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/jogjadamai/infest/assets/LoginViewLogo.png"))); // NOI18N
         infestLogo.setToolTipText("INFEST");
@@ -165,7 +165,7 @@ public final class LoginView extends javax.swing.JFrame implements Runnable {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(loginButton)
+                .addComponent(signInButton)
                 .addGap(103, 103, 103))
             .addGroup(layout.createSequentialGroup()
                 .addGap(111, 111, 111)
@@ -191,7 +191,7 @@ public final class LoginView extends javax.swing.JFrame implements Runnable {
                 .addGap(40, 40, 40)
                 .addComponent(layeredPane, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(42, 42, 42)
-                .addComponent(loginButton)
+                .addComponent(signInButton)
                 .addGap(120, 120, 120))
         );
 
@@ -236,7 +236,7 @@ public final class LoginView extends javax.swing.JFrame implements Runnable {
     private javax.swing.JButton exitButton;
     private javax.swing.JLabel infestLogo;
     private javax.swing.JLayeredPane layeredPane;
-    private javax.swing.JButton loginButton;
+    private javax.swing.JButton signInButton;
     private javax.swing.JPasswordField passwordField;
     private javax.swing.JLabel passwordFieldBackground;
     private javax.swing.JLabel passwordIcon;

@@ -29,8 +29,8 @@ import java.rmi.RemoteException;
  */
 public final class Program {
     
-    private static Runnable MainGUI, LoginView;
-    private static Thread MainGUIThread, LoginViewThread;
+    private static Runnable MainGUI, SignInGUI;
+    private static Thread MainGUIThread, SignInGUIThread;
     private static com.jogjadamai.infest.communication.IProtocolServer Server;
     
     private static final Integer[] SECURITY_NUMBER = {
@@ -39,15 +39,15 @@ public final class Program {
     
     public static void main(String[] args) throws RemoteException {
         Program.MainGUI = new MainGUI();
-        Program.LoginView = new LoginView();
+        Program.SignInGUI = new SignInGUI();
         Program.MainGUIThread = new Thread(Program.MainGUI);
-        Program.LoginViewThread = new Thread(Program.LoginView);
+        Program.SignInGUIThread = new Thread(Program.SignInGUI);
         Program.Server = com.jogjadamai.infest.communication.ProtocolServer.getInstance();
-        Program.showLoginView();
+        Program.showSignInGUI();
     }
     
-    protected static void showLoginView() {
-        java.awt.EventQueue.invokeLater(Program.LoginViewThread);
+    protected static void showSignInGUI() {
+        java.awt.EventQueue.invokeLater(Program.SignInGUIThread);
     }
     
     protected static Boolean authenticate(Integer[] securityNumber){
