@@ -234,25 +234,14 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
         
     }
     
-    private void initialiseConnection() {
-        try {
-            this.registry = java.rmi.registry.LocateRegistry.getRegistry(42700);
-            this.protocolClient = new com.jogjadamai.infest.communication.AdministratorClient();
-            this.protocolServer = (com.jogjadamai.infest.communication.IProtocolServer) this.registry.lookup("InfestAPIServer");
-            this.protocolServer.authenticate(this.protocolClient);
-        } catch (java.rmi.NotBoundException | java.rmi.RemoteException ex) {
-            java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-    }
-    
     private void saveFeaturesConfigurationActionPerformed(java.awt.event.ActionEvent evt) { 
-        if (this.writeAllFeatures()) javax.swing.JOptionPane.showMessageDialog(this, "Features Configuration saved successfully!", "Save Configuration", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        if (administrator.writeAllFeatures(this)) javax.swing.JOptionPane.showMessageDialog(this, "Features Configuration saved successfully!", "Save Configuration", javax.swing.JOptionPane.INFORMATION_MESSAGE);
         else javax.swing.JOptionPane.showMessageDialog(this, "Features Configuration failed to be save!", "Save Configuration", javax.swing.JOptionPane.ERROR_MESSAGE);
-        if (!this.readAllFeatures()) javax.swing.JOptionPane.showMessageDialog(this, "Failed to read Features Configuration!", "Read Configuration", javax.swing.JOptionPane.ERROR_MESSAGE);
+        if (!administrator.readAllFeatures(this)) javax.swing.JOptionPane.showMessageDialog(this, "Failed to read Features Configuration!", "Read Configuration", javax.swing.JOptionPane.ERROR_MESSAGE);
     }                                                         
 
     private void serverToggleButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        this.toggleServer();
+        administrator.toggleServer(this);
     }   
     
     private void showCurrencyCheckBoxStateChanged(javax.swing.event.ChangeEvent evt) {
@@ -269,135 +258,31 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
     } 
     
     // Variables declaration - do not modify                     
-    private javax.swing.JTextField currencyTextField;
-    private javax.swing.JCheckBox customerPrintBillCheckBox;
-    private javax.swing.JCheckBox customerShowMenuDurationCheckBox;
-    private javax.swing.JCheckBox customerShowMenuImageCheckBox;
-    private javax.swing.JPanel featurePanel;
-    private javax.swing.JLabel infestLogoLabel;
-    private javax.swing.JPanel logoPanel;
-    private javax.swing.JCheckBox maintenanceModeCheckBox;
-    private javax.swing.JCheckBox operatorGenerateReportCheckBox;
-    private javax.swing.JButton saveFeaturesConfiguration;
-    private javax.swing.JLabel serverStatusLabel;
-    private javax.swing.JToggleButton serverToggleButton;
-    private javax.swing.JCheckBox showCurrencyCheckBox;
-    private javax.swing.JLabel statusLabel;
-    private java.util.List<javax.swing.JCheckBox> featuresCheckBox;
-    private java.util.List<com.jogjadamai.infest.entity.Features> features;
-    private java.rmi.registry.Registry registry;
-    private com.jogjadamai.infest.communication.IProtocolClient protocolClient;
-    private com.jogjadamai.infest.communication.IProtocolServer protocolServer;
+    protected javax.swing.JTextField currencyTextField;
+    protected javax.swing.JCheckBox customerPrintBillCheckBox;
+    protected javax.swing.JCheckBox customerShowMenuDurationCheckBox;
+    protected javax.swing.JCheckBox customerShowMenuImageCheckBox;
+    protected javax.swing.JPanel featurePanel;
+    protected javax.swing.JLabel infestLogoLabel;
+    protected javax.swing.JPanel logoPanel;
+    protected javax.swing.JCheckBox maintenanceModeCheckBox;
+    protected javax.swing.JCheckBox operatorGenerateReportCheckBox;
+    protected javax.swing.JButton saveFeaturesConfiguration;
+    protected javax.swing.JLabel serverStatusLabel;
+    protected javax.swing.JToggleButton serverToggleButton;
+    protected javax.swing.JCheckBox showCurrencyCheckBox;
+    protected javax.swing.JLabel statusLabel;
+    protected com.jogjadamai.infest.administrator.Administrator administrator;
     // End of variables declaration  
     
     @Override
     public void run() {
-        initialiseConnection();
-        refreshServerStatus();
+        administrator = Administrator.getIntance();
+        administrator.refreshServerStatus(this);
         
         getContentPane().setBackground(new java.awt.Color(0xffffff));
         setLocationRelativeTo(null);
         setVisible(true);
     }
 
-    private Boolean readAllFeatures() {
-        Boolean isSuccess = true;
-        try {
-            this.features = this.protocolServer.readAllFeature(protocolClient);
-        } catch (java.rmi.RemoteException ex) {
-            java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        this.featuresCheckBox = new java.util.ArrayList<>();
-        this.featuresCheckBox.add(this.maintenanceModeCheckBox);
-        this.featuresCheckBox.add(this.showCurrencyCheckBox);
-        this.featuresCheckBox.add(this.operatorGenerateReportCheckBox);
-        this.featuresCheckBox.add(this.customerPrintBillCheckBox);
-        this.featuresCheckBox.add(this.customerShowMenuDurationCheckBox);
-        this.featuresCheckBox.add(this.customerShowMenuImageCheckBox);
-        features.forEach((feature) -> {
-            this.featuresCheckBox.get(feature.getId()-1).setSelected((feature.getStatus() == 1));
-            if(feature.getName().equals("CURRENCY")) this.currencyTextField.setText(feature.getDescription());
-        });
-        return isSuccess;
-    }
-    
-    private Boolean writeAllFeatures() {
-        Boolean isSuccess = true;
-        try {
-            this.features = this.protocolServer.readAllFeature(protocolClient);
-        } catch (java.rmi.RemoteException ex) {
-            java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        this.featuresCheckBox.add(this.maintenanceModeCheckBox);
-        this.featuresCheckBox.add(this.showCurrencyCheckBox);
-        this.featuresCheckBox.add(this.operatorGenerateReportCheckBox);
-        this.featuresCheckBox.add(this.customerPrintBillCheckBox);
-        this.featuresCheckBox.add(this.customerShowMenuDurationCheckBox);
-        this.featuresCheckBox.add(this.customerShowMenuImageCheckBox);
-        features.forEach((feature) -> {
-            if(featuresCheckBox.get(feature.getId()-1).isSelected()) feature.setStatus(1);
-            else feature.setStatus(0);
-            if(feature.getName().equals("CURRENCY")) feature.setDescription(this.currencyTextField.getText());
-            try {
-                this.protocolServer.updateFeature(protocolClient, feature);
-            } catch (java.rmi.RemoteException ex) {
-                java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-            }
-        });
-        isSuccess = true;
-        return isSuccess;
-    }
-    
-    private void refreshServerStatus() {
-        try {
-            if(com.jogjadamai.infest.communication.ProtocolServer.getInstance().isServerActive()) {
-                this.statusLabel.setText("Started & Listening");
-                this.statusLabel.setForeground(java.awt.Color.BLUE);
-                this.serverToggleButton.setText("STOP SERVER");
-                this.serverToggleButton.setForeground(java.awt.Color.RED);
-                this.repaintPane(true);
-                if (!this.readAllFeatures()) javax.swing.JOptionPane.showMessageDialog(this, "Failed to read Features Configuration!", "Read Configuration", javax.swing.JOptionPane.ERROR_MESSAGE);
-            } else {
-                this.statusLabel.setText("Idle");
-                this.statusLabel.setForeground(java.awt.Color.RED);
-                this.serverToggleButton.setText("START SERVER");
-                this.serverToggleButton.setForeground(java.awt.Color.BLUE);
-                this.repaintPane(false);
-            }
-        } catch (java.rmi.RemoteException ex) {
-            java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-    }
-    
-    private void repaintPane(Boolean b) {
-        if(!b) {
-            this.maintenanceModeCheckBox.setSelected(b);
-            this.showCurrencyCheckBox.setSelected(b);
-            this.currencyTextField.setText("");
-            this.operatorGenerateReportCheckBox.setSelected(b);
-            this.customerPrintBillCheckBox.setSelected(b);
-            this.customerShowMenuDurationCheckBox.setSelected(b);
-            this.customerShowMenuImageCheckBox.setSelected(b);
-        }
-        this.maintenanceModeCheckBox.setEnabled(b);
-        this.showCurrencyCheckBox.setEnabled(b);
-        this.currencyTextField.setEnabled(b);
-        this.operatorGenerateReportCheckBox.setEnabled(b);
-        this.customerPrintBillCheckBox.setEnabled(b);
-        this.customerShowMenuDurationCheckBox.setEnabled(b);
-        this.customerShowMenuImageCheckBox.setEnabled(b);
-        this.saveFeaturesConfiguration.setEnabled(b);
-        this.featurePanel.setEnabled(b);
-    }
-        
-    private void toggleServer() {
-        try {
-            if(!com.jogjadamai.infest.communication.ProtocolServer.getInstance().isServerActive()) com.jogjadamai.infest.communication.ProtocolServer.getInstance().start();
-            else com.jogjadamai.infest.communication.ProtocolServer.getInstance().stop();
-        } catch (java.rmi.RemoteException ex) {
-            java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        this.refreshServerStatus();
-    }
-    
 }
