@@ -131,10 +131,14 @@ public final class SignInGUI extends javax.swing.JFrame implements Runnable {
         layeredPane.setLayer(passwordField, javax.swing.JLayeredPane.PALETTE_LAYER);
         layeredPane.add(passwordField, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 57, 250, 25));
 
+        signInButton.setBackground(new java.awt.Color(0x651112));
         signInButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/jogjadamai/infest/assets/SignInButton.png"))); // NOI18N
         signInButton.setBorder(null);
         signInButton.setDoubleBuffered(true);
-        signInButton.addActionListener(this::loginButtonActionPerformed);
+        signInButton.setMaximumSize(new java.awt.Dimension(120, 40));
+        signInButton.setMinimumSize(new java.awt.Dimension(120, 40));
+        signInButton.setPreferredSize(new java.awt.Dimension(120, 40));
+        signInButton.addActionListener(this::signInButtonActionPerformed);
 
         infestLogo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/jogjadamai/infest/assets/LoginViewLogo.png"))); // NOI18N
         infestLogo.setToolTipText("INFEST");
@@ -164,9 +168,9 @@ public final class SignInGUI extends javax.swing.JFrame implements Runnable {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(signInButton)
-                .addGap(103, 103, 103))
+                .addGap(91, 91, 91)
+                .addComponent(signInButton, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(91, 91, 91))
             .addGroup(layout.createSequentialGroup()
                 .addGap(111, 111, 111)
                 .addComponent(infestLogo)
@@ -214,7 +218,7 @@ public final class SignInGUI extends javax.swing.JFrame implements Runnable {
     }                                  
 
     
-    private void loginButtonActionPerformed(java.awt.event.ActionEvent evt) {
+    private void signInButtonActionPerformed(java.awt.event.ActionEvent evt) {
         login();
     }  
     
