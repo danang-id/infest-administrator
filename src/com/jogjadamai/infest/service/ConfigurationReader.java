@@ -37,15 +37,15 @@ public final class ConfigurationReader {
             property.load(inputStream);
             propertyValue = property.getProperty(propertyKey);
 	} catch (java.io.IOException ex) {
-            System.out.println("[INFEST] " + ex);
-            return null;
+            System.err.println("[INFEST] " + ex);
+            throw new NullPointerException();
 	} finally {
             if(inputStream != null) {
                 try {
                     inputStream.close();
                 } catch (java.io.IOException ex) {
-                    System.out.println("[INFEST] " + ex);
-                    return null;
+                    System.err.println("[INFEST] " + ex);
+                    throw new NullPointerException();
                 }
             }
 	}
