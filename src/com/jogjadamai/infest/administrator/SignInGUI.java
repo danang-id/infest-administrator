@@ -52,11 +52,11 @@ public final class SignInGUI extends javax.swing.JFrame implements Runnable {
         exitButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("INFEST: Administrator Login");
+        setTitle("INFEST: Administrator Authentication");
         setAlwaysOnTop(true);
         setMaximumSize(new java.awt.Dimension(302, 450));
         setMinimumSize(new java.awt.Dimension(302, 450));
-        setName("loginFrame"); // NOI18N
+        setName("authenticationFrame"); // NOI18N
         setUndecorated(true);
         setOpacity(1.0F);
         setPreferredSize(new java.awt.Dimension(302, 450));

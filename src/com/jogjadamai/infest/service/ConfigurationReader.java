@@ -15,8 +15,6 @@
  */
 package com.jogjadamai.infest.service;
 
-import java.io.IOException;
-
 /**
  * <h1>class <code>ConfigurationReader</code></h1>
  * <p><code>ConfigurationReader</code> is a methods to read Infest Configuration
@@ -38,15 +36,15 @@ public final class ConfigurationReader {
             inputStream = new java.io.FileInputStream("infest.conf");
             property.load(inputStream);
             propertyValue = property.getProperty(propertyKey);
-	} catch (IOException ex) {
-            java.util.logging.Logger.getLogger(ConfigurationReader.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+	} catch (java.io.IOException ex) {
+            System.out.println("[INFEST] " + ex);
             return null;
 	} finally {
             if(inputStream != null) {
                 try {
                     inputStream.close();
-                } catch (IOException ex) {
-                    java.util.logging.Logger.getLogger(ConfigurationReader.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+                } catch (java.io.IOException ex) {
+                    System.out.println("[INFEST] " + ex);
                     return null;
                 }
             }

@@ -769,7 +769,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
      */
     @Override
     public List<FinanceReport> readFinanceReport(IProtocolClient client) throws RemoteException {
-        return readFinanceReport(client, LocalDate.ofEpochDay(0));
+        return readFinanceReport(client, new java.sql.Date(new Date(0).getTime()).toLocalDate());
     }
 
     /**
