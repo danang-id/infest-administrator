@@ -31,6 +31,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.security.SecureRandom;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -105,7 +107,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
     }
 
     private void setStatus(String status) {
-        System.out.println("[InfestAPIServer]: " + status);
+        System.out.println("[InfestAPIServer] " + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(LocalDateTime.now()) + ": " + status);
     }
     
     /**
