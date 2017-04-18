@@ -773,7 +773,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
      */
     @Override
     public List<FinanceReport> readFinanceReport(IProtocolClient client) throws RemoteException {
-        return readFinanceReport(client, LocalDateTime.ofInstant(new Date(0).toInstant(), ZoneId.of("GMT+7")).toLocalDate());
+        return readFinanceReport(client, LocalDateTime.ofInstant(new Date(0).toInstant(), ZoneId.of("GMT+7")).toLocalDate(), true);
     }
 
     /**
@@ -798,6 +798,10 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
      */
     @Override
     public List<FinanceReport> readFinanceReport(IProtocolClient client, LocalDate localDate) throws RemoteException {
+        return readFinanceReport(client, localDate, false);
+    }
+    
+    public List<FinanceReport> readFinanceReport(IProtocolClient client, LocalDate localDate, Boolean allDate) throws RemoteException {
         List<FinanceReport> financeReport = new ArrayList<FinanceReport>();
         if(isClientAuthenticated(client)) {
             switch(client.getType()) {
@@ -812,11 +816,11 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                         report.setMenuPrice(menu.getPrice());
                         report.setMenuStatus(menu.getStatus());
                         report.setMenuStatusdate(menu.getStatusDate());
-                        report.setOrderDate(date);
+                        report.setOrderDate(allDate ? new Date(0) : date);
                         report.setOrderTotal(0);
                         List<Orders> orders = menu.getOrdersList();
                         for(Orders order : orders) {
-                            if(date.getTime() == 0 | date.equals(order.getIdcart().getDate())) {
+                            if(allDate | date.equals(order.getIdcart().getDate())) {
                                 report.setOrderTotal(report.getOrderTotal() + order.getTotal());
                             }
                         }
@@ -834,7 +838,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
             financeReport = null;
         }
         return financeReport;
-    }
+    } 
     
     /**
      * <h2>method <code>updateFeature()</code></h2>
