@@ -771,7 +771,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
      */
     @Override
     public List<FinanceReport> readFinanceReport(IProtocolClient client) throws RemoteException {
-        return readFinanceReport(client, new java.sql.Date(new Date(0).getTime()).toLocalDate());
+        return readFinanceReport(client, null);
     }
 
     /**
@@ -813,7 +813,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                         report.setOrderTotal(0);
                         List<Orders> orders = menu.getOrdersList();
                         for(Orders order : orders) {
-                            if(Date.valueOf(localDate).getTime() == 0 | Date.valueOf(localDate).equals(order.getIdcart().getDate())) {
+                            if(localDate == null | Date.valueOf(localDate).equals(order.getIdcart().getDate())) {
                                 report.setOrderTotal(report.getOrderTotal() + order.getTotal());
                             }
                         }
