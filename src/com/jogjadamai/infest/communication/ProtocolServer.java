@@ -29,12 +29,14 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.SecureRandom;
-import java.sql.Date;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -771,7 +773,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
      */
     @Override
     public List<FinanceReport> readFinanceReport(IProtocolClient client) throws RemoteException {
-        return readFinanceReport(client, null);
+        return readFinanceReport(client, LocalDateTime.ofInstant(new Date(0).toInstant(), ZoneId.of("GMT+7")).toLocalDate());
     }
 
     /**
@@ -802,6 +804,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                 case OPERATOR:
                     setStatus("readFinanceReport(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
                     List<Menus> menus = this.readAllMenu(client);
+                    Date date = Date.from(localDate.atStartOfDay().atZone(ZoneId.of("GMT+7")).toInstant());
                     for(Menus menu : menus) {
                         FinanceReport report = new FinanceReport();
                         report.setMenuId(menu.getId());
@@ -809,11 +812,11 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                         report.setMenuPrice(menu.getPrice());
                         report.setMenuStatus(menu.getStatus());
                         report.setMenuStatusdate(menu.getStatusDate());
-                        report.setOrderDate(Date.valueOf(localDate));
+                        report.setOrderDate(date);
                         report.setOrderTotal(0);
                         List<Orders> orders = menu.getOrdersList();
                         for(Orders order : orders) {
-                            if(localDate == null | Date.valueOf(localDate).equals(order.getIdcart().getDate())) {
+                            if(date.getTime() == 0 | date.equals(order.getIdcart().getDate())) {
                                 report.setOrderTotal(report.getOrderTotal() + order.getTotal());
                             }
                         }
