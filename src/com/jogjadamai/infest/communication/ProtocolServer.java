@@ -107,7 +107,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
     }
 
     private void setStatus(String status) {
-        System.out.println("[InfestAPIServer] " + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(LocalDateTime.now()) + ": " + status);
+        System.out.println("[INFEST] " + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(LocalDateTime.now()) + ": " + status);
     }
     
     /**
