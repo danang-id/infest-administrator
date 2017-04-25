@@ -24,12 +24,23 @@ import com.jogjadamai.infest.entity.Tables;
 import com.jogjadamai.infest.persistence.InfestEntityController;
 import com.jogjadamai.infest.persistence.InfestPersistence;
 import com.jogjadamai.infest.persistence.exceptions.NonexistentEntityException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.time.Instant;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.InvalidParameterSpecException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -40,6 +51,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 /**
  * <h1>class <code>ProtocolServer</code></h1>
@@ -982,6 +996,118 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
             isSuccess = false;
         }
         return isSuccess;
+    }
+    
+    private String getSalt() {
+        return "";
+    }
+    
+    private Credential createDefaultAdministratorCredential() {
+        Credential credential = new Credential("infestadmin", "admininfest".toCharArray());
+        try {
+            credential.encrpyt(getSalt());
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException | InvalidKeyException | InvalidParameterSpecException | UnsupportedEncodingException | IllegalBlockSizeException | BadPaddingException ex) {
+            System.err.println("[INFEST] " + ex);
+        }
+        File credFile = new File("administrator.crd");
+        try {
+            credFile.createNewFile();
+            FileOutputStream fos = new FileOutputStream(credFile, false);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(credential);
+        } catch (IOException ex) {
+            System.err.println("[INFEST] " + ex);
+        }
+        return credential;
+    }
+    
+    private Credential createDefaultOperatorCredential() {
+        Credential credential = new Credential("infestoperator", "operatorinfest".toCharArray());
+        try {
+            credential.encrpyt(getSalt());
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException | InvalidKeyException | InvalidParameterSpecException | UnsupportedEncodingException | IllegalBlockSizeException | BadPaddingException ex) {
+            System.err.println("[INFEST] " + ex);
+        }
+        File credFile = new File("operator.crd");
+        try {
+            credFile.createNewFile();
+            FileOutputStream fos = new FileOutputStream(credFile, false);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(credential);
+        } catch (IOException ex) {
+            System.err.println("[INFEST] " + ex);
+        }
+        return credential;
+    }
+    
+    /**
+     * <h2>method <code>getCredential()</code></h2>
+     * <p>Method <code>getCredential</code> is used to read <code>Credential</code> 
+     * of <code>IProtocolClient.Type</code>
+     * 
+     * @param client  <code>IProtocolClient</code> object to execute this method.
+     * @return Credential information of <code>IProtocolClient.Type</code>.
+     * @throws java.rmi.RemoteException A <code>RemoteException</code> is the
+     *                                  common superclass for a number of
+     *                                  communication-related exceptions that
+     *                                  may occur during the execution of a
+     *                                  remote method call.
+     */
+    @Override
+    public Credential getCredential(IProtocolClient client) throws java.rmi.RemoteException{
+        Credential credential;
+        File credFile;
+        if(isClientAuthenticated(client)) {
+            entityController = InfestPersistence.getControllerInstance(InfestPersistence.Entity.TABLES);
+            switch(client.getType()) {
+                case ADMINISTRATOR:
+                    setStatus("getCredential(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
+                    credFile = new File("administrator.crd");
+                    if(credFile.exists() && !credFile.isDirectory()) {
+                        try {
+                            FileInputStream fis = new FileInputStream(credFile);
+                            ObjectInputStream ois = new ObjectInputStream(fis);
+                            credential = (Credential) ois.readObject();
+                        } catch (FileNotFoundException ex) {
+                            credential = createDefaultAdministratorCredential();
+                            System.err.println("[INFEST] " + ex);
+                        } catch (IOException | ClassNotFoundException ex) {
+                            credential = null;
+                            System.err.println("[INFEST] " + ex);
+                        }
+                    } else {
+                        credential = createDefaultAdministratorCredential();
+                    }
+                    break;
+                case OPERATOR:
+                    setStatus("getCredential(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
+                    credFile = new File("operator.crd");
+                    if(credFile.exists() && !credFile.isDirectory()) {
+                        try {
+                            FileInputStream fis = new FileInputStream(credFile);
+                            ObjectInputStream ois = new ObjectInputStream(fis);
+                            credential = (Credential) ois.readObject();
+                        } catch (FileNotFoundException ex) {
+                            credential = createDefaultOperatorCredential();
+                            System.err.println("[INFEST] " + ex);
+                        } catch (IOException | ClassNotFoundException ex) {
+                            credential = null;
+                            System.err.println("[INFEST] " + ex);
+                        }
+                    } else {
+                        credential = createDefaultAdministratorCredential();
+                    }
+                    break;
+                default:
+                    setStatus("getCredential(): Server denied request from a/an " + client.getType().name() + " client. This client type IS NOT PERMITTED to request this method.");
+                    credential = null;
+                    break;
+            }
+        } else {
+            setStatus("getCredential(): Server denied request from an UN-AUTHENTICATED " + client.getType().name() + " client.");
+            credential = null;
+        }
+        return credential;
     }
 
     /**
