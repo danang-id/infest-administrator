@@ -24,6 +24,7 @@ import com.jogjadamai.infest.entity.Tables;
 import com.jogjadamai.infest.persistence.InfestEntityController;
 import com.jogjadamai.infest.persistence.InfestPersistence;
 import com.jogjadamai.infest.persistence.exceptions.NonexistentEntityException;
+import com.jogjadamai.infest.service.ProgramPropertiesManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -47,8 +48,10 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.crypto.BadPaddingException;
@@ -999,7 +1002,24 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
     }
     
     private String getSalt() {
-        return "";
+        ProgramPropertiesManager programPropertiesManager = ProgramPropertiesManager.getInstance();
+        String salt = programPropertiesManager.getProperty("salt");
+        if(salt == null) {
+            SecureRandom secureRandom;
+            byte[] saltBytes = new byte[32];
+            try {
+                secureRandom = SecureRandom.getInstance("SHA1PRNG");
+                secureRandom.nextBytes(saltBytes);
+            } catch (NoSuchAlgorithmException ex) {
+                secureRandom = new SecureRandom();
+                secureRandom.nextBytes(saltBytes);
+                System.err.println("[INFEST] " + ex);
+            } finally {
+                salt = Base64.getEncoder().encodeToString(saltBytes);
+                programPropertiesManager.setProperty("salt", salt);
+            }
+        }
+        return salt;
     }
     
     private Credential createDefaultAdministratorCredential() {

@@ -50,13 +50,4 @@ public final class Program {
         java.awt.EventQueue.invokeLater(Program.SignInGUIThread);
     }
     
-    protected static Boolean authenticate(Integer[] securityNumber){
-        if (java.util.Arrays.equals(securityNumber, Program.SECURITY_NUMBER)) {
-            java.awt.EventQueue.invokeLater(Program.MainGUIThread);
-            return true;
-        } else {
-            return false;
-        }
-    }
-    
 }

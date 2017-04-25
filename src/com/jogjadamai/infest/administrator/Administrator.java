@@ -35,8 +35,12 @@ public class Administrator {
     private com.jogjadamai.infest.communication.IProtocolClient protocolClient;
     private com.jogjadamai.infest.communication.IProtocolServer protocolServer;
     
+    private final com.jogjadamai.infest.service.ProgramPropertiesManager programPropertiesManager;
+            
+    
     private Administrator() {
         initialiseConnection();
+        programPropertiesManager = com.jogjadamai.infest.service.ProgramPropertiesManager.getInstance();
     }
     
     protected static Administrator getIntance() {
@@ -45,32 +49,89 @@ public class Administrator {
     }
     
     private void initialiseConnection() {
+        String serverAddress = null;
         try {
-            com.jogjadamai.infest.service.ProgramPropertiesManager programPropertiesManager = com.jogjadamai.infest.service.ProgramPropertiesManager.getInstance();
-            String serverAddress = programPropertiesManager.getProperty("serveraddress");
-            if(serverAddress == null) System.exit(-1);
-            this.registry = java.rmi.registry.LocateRegistry.getRegistry(42700);
+            serverAddress = programPropertiesManager.getProperty("serveraddress");
+        } catch (java.lang.NullPointerException ex) {
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            javax.swing.JOptionPane.showMessageDialog(null, "Infest Configuration File is miss-configured!\n\n"
+                    + "Please verify that the Infest Configuration File (infest.conf) is exist in the current\n"
+                    + "working directory and is properly configured. Any wrong setting or modification of\n"
+                    + "Infest Configuration File would cause this error.", "INFEST: Program Configuration Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+            fatalExit(-1);
+        }
+        try {
+            this.registry = java.rmi.registry.LocateRegistry.getRegistry(serverAddress, 42700);
             this.protocolClient = new com.jogjadamai.infest.communication.AdministratorClient();
             this.protocolServer = (com.jogjadamai.infest.communication.IProtocolServer) this.registry.lookup("InfestAPIServer");
             this.protocolServer.authenticate(this.protocolClient);
         } catch (java.rmi.NotBoundException | java.rmi.RemoteException ex) {
-            java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            javax.swing.JOptionPane.showMessageDialog(null, "Failed to initialise Infest API Server (on " + serverAddress  +")!\n\n"
+                + "Program error detected.", "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            fatalExit(-1);
         }
     }
+    
+    private void fatalExit(int code) {
+        System.err.println("[INFEST] " +  getNowTime() + ": System exited with code " + code + ".");
+        javax.swing.JOptionPane.showMessageDialog(null,
+                "Fatal error occured! Please contact an Infest Adminisrator.\n\n"
+                + "CODE [" + code + "]\n"
+                + "Infest Program is now exiting.", "INFEST: System Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+        System.exit(code);
+    }
 
+    private String getNowTime() {
+        return java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(java.time.LocalDateTime.now());
+    }
+    
     protected void signIn(com.jogjadamai.infest.administrator.SignInGUI frame) {
-        String password = "";
-        for (char character : frame.passwordField.getPassword()) {
-            password = password + character;
+        com.jogjadamai.infest.communication.Credential savedCred = null;
+        try {    
+            savedCred = this.protocolServer.getCredential(protocolClient);
+        } catch (java.rmi.RemoteException ex) {
+            savedCred = new com.jogjadamai.infest.communication.Credential("", new char[0]);System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            javax.swing.JOptionPane.showMessageDialog(frame, "Infest API Server is unable to run!\n\n"
+                + "Program error detected.", "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            fatalExit(-1);
         }
-        Integer[] securityNumber = {
-            java.util.Arrays.hashCode(frame.usernameField.getText().getBytes()), 
-            java.util.Arrays.hashCode(password.getBytes())
-        };
-        if(Program.authenticate(securityNumber)) {
+        com.jogjadamai.infest.communication.Credential inputCred = new com.jogjadamai.infest.communication.Credential(frame.usernameField.getText(), frame.passwordField.getPassword());
+        try {
+            String salt = null;
+            salt = this.programPropertiesManager.getProperty("salt");
+            try {
+                inputCred.encrpyt(salt);
+            } catch (java.security.NoSuchAlgorithmException 
+                    | java.security.spec.InvalidKeySpecException 
+                    | javax.crypto.NoSuchPaddingException 
+                    | java.security.InvalidKeyException 
+                    | java.security.spec.InvalidParameterSpecException 
+                    | java.io.UnsupportedEncodingException 
+                    | javax.crypto.IllegalBlockSizeException 
+                    | javax.crypto.BadPaddingException ex) {
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            javax.swing.JOptionPane.showMessageDialog(frame, "Failed to encrypt credentials!\n\n"
+                    + "Please contact an Infest Administrator for furhter help.", 
+                    "INFEST: Encryption Service", javax.swing.JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (NullPointerException ex) {
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            javax.swing.JOptionPane.showMessageDialog(frame, "Infest Configuration File is miss-configured!\n\n"
+                    + "Please verify that the Infest Configuration File (infest.conf) is exist in the current\n"
+                    + "working directory and is properly configured. Any wrong setting or modification of\n"
+                    + "Infest Configuration File would cause this error.", 
+                    "INFEST: Program Configuration Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+            fatalExit(-1);
+        }
+        if(savedCred.equals(inputCred)) {
             frame.setVisible(false);
         } else {
-            javax.swing.JOptionPane.showMessageDialog(frame, "Sign In Failed! Either username or password is wrong.", "Infest Authentication System", javax.swing.JOptionPane.ERROR_MESSAGE);
+            javax.swing.JOptionPane.showMessageDialog(frame, 
+                    "Sign In Failed!\n\n"
+                    + "Either username or password is wrong, or your\n"
+                    + "Infest Configuration File is miss-configured.", 
+                    "INFEST: Authentication System", javax.swing.JOptionPane.ERROR_MESSAGE);
         }
     }
     
