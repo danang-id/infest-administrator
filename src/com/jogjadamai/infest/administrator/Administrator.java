@@ -46,7 +46,7 @@ public class Administrator {
     
     private void initialiseConnection() {
         try {
-            String serverAddress = com.jogjadamai.infest.service.ProgramProperties.getProperty("serveraddress");
+            String serverAddress = com.jogjadamai.infest.service.ProgramPropertiesManager.getProperty("serveraddress");
             if(serverAddress == null) System.exit(-1);
             this.registry = java.rmi.registry.LocateRegistry.getRegistry(42700);
             this.protocolClient = new com.jogjadamai.infest.communication.AdministratorClient();
