@@ -34,8 +34,12 @@ public final class ProgramPropertiesManager {
     private static ProgramPropertiesManager INSTANCE;
     
     private ProgramPropertiesManager() {
-        java.net.URL propertyFileURL = getClass().getResource("infest.conf");
-        propertyFile = new java.io.File(propertyFileURL.getPath());
+        propertyFile = new java.io.File("infest.conf");
+        try {
+            propertyFile.createNewFile();
+        } catch (java.io.IOException ex) {
+            System.err.println("[INFEST] " + ex);
+        }
         propertyComment = 
                       " \n"
                     + " INFEST CONFIGURATION FILE \n"
@@ -46,7 +50,12 @@ public final class ProgramPropertiesManager {
                     + " Infest Developer team, and any its affiliates does not take any responsibilties toward \n"
                     + " program error caused by a modified or miss-configured file. Please take any necessary \n"
                     + " cautions on proceeding. \n";
-        if(getProperty("serveraddress") == null) setProperty("serveraddress", "127.0.0.1");
+        try {
+            getProperty("serveraddress");
+        } catch (NullPointerException ex) {
+            System.err.println("[INFEST] " + ex);
+            setProperty("serveraddress", "127.0.0.1");
+        }
     }
     
     public static ProgramPropertiesManager getInstance() {
@@ -54,7 +63,7 @@ public final class ProgramPropertiesManager {
         return INSTANCE;
     }
     
-    public String getProperty(String propertyKey) throws NullPointerException {
+    public String getProperty(String propertyKey) {
         java.util.Properties property = new java.util.Properties();
 	java.io.InputStream inputStream = null;
         String propertyValue;
