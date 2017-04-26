@@ -15,8 +15,6 @@
  */
 package com.jogjadamai.infest.administrator;
 
-import java.rmi.RemoteException;
-
 /**
  * <h1>class <code>Program</code></h1>
  * <p><code>Program</code> is class defining <code>main()</code> to run the
