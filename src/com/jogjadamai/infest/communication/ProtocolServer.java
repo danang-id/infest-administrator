@@ -53,9 +53,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 /**
  * <h1>class <code>ProtocolServer</code></h1>
@@ -1031,7 +1028,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         com.jogjadamai.infest.communication.Credentials credential = new com.jogjadamai.infest.communication.Credentials(user, pass);
         try {
             credential.encrpyt(getSalt());
-            java.io.File credFile = new java.io.File("operator.crd");
+            java.io.File credFile = new java.io.File("administrator.crd");
             try {
                 credFile.createNewFile();
                 java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
