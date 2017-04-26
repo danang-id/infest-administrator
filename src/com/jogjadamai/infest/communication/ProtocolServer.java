@@ -1003,8 +1003,10 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
     
     private String getSalt() {
         ProgramPropertiesManager programPropertiesManager = ProgramPropertiesManager.getInstance();
-        String salt = programPropertiesManager.getProperty("salt");
-        if(salt == null) {
+        String salt;
+        try {
+            salt = programPropertiesManager.getProperty("salt");
+        } catch(NullPointerException npe) {
             SecureRandom secureRandom;
             byte[] saltBytes = new byte[32];
             try {
@@ -1022,8 +1024,12 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         return salt;
     }
     
-    private Credential createDefaultAdministratorCredential() {
-        Credential credential = new Credential("infestadmin", "admininfest".toCharArray());
+    private Credentials createDefaultAdministratorCredential() {
+        String user = "infestadmin";
+        char[] pass = {
+            'a', 'd', 'm', 'i', 'n', 'i', 'n', 'f', 'e', 's', 't'
+        };
+        Credentials credential = new Credentials(user, pass);
         try {
             credential.encrpyt(getSalt());
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException | InvalidKeyException | InvalidParameterSpecException | UnsupportedEncodingException | IllegalBlockSizeException | BadPaddingException ex) {
@@ -1041,8 +1047,12 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         return credential;
     }
     
-    private Credential createDefaultOperatorCredential() {
-        Credential credential = new Credential("infestoperator", "operatorinfest".toCharArray());
+    private Credentials createDefaultOperatorCredential() {
+        String user = "infestoperator";
+        char[] pass = {
+            'o', 'p', 'e', 'r', 'a', 't', 'o', 'r', 'i', 'n', 'f', 'e', 's', 't'
+        };
+        Credentials credential = new Credentials(user, pass);
         try {
             credential.encrpyt(getSalt());
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException | InvalidKeyException | InvalidParameterSpecException | UnsupportedEncodingException | IllegalBlockSizeException | BadPaddingException ex) {
@@ -1074,10 +1084,10 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
      *                                  remote method call.
      */
     @Override
-    public Credential getCredential(IProtocolClient client) throws java.rmi.RemoteException{
-        Credential credential;
+    public Credentials getCredentials(IProtocolClient client) throws java.rmi.RemoteException{
+        Credentials credential;
         File credFile;
-        if(isClientAuthenticated(client)) {
+        if(client.equals(CLIENT_LIST.get(client.getClientSession()))) {
             entityController = InfestPersistence.getControllerInstance(InfestPersistence.Entity.TABLES);
             switch(client.getType()) {
                 case ADMINISTRATOR:
@@ -1087,7 +1097,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                         try {
                             FileInputStream fis = new FileInputStream(credFile);
                             ObjectInputStream ois = new ObjectInputStream(fis);
-                            credential = (Credential) ois.readObject();
+                            credential = (Credentials) ois.readObject();
                         } catch (FileNotFoundException ex) {
                             credential = createDefaultAdministratorCredential();
                             System.err.println("[INFEST] " + ex);
@@ -1106,7 +1116,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                         try {
                             FileInputStream fis = new FileInputStream(credFile);
                             ObjectInputStream ois = new ObjectInputStream(fis);
-                            credential = (Credential) ois.readObject();
+                            credential = (Credentials) ois.readObject();
                         } catch (FileNotFoundException ex) {
                             credential = createDefaultOperatorCredential();
                             System.err.println("[INFEST] " + ex);

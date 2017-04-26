@@ -39,8 +39,8 @@ public class Administrator {
             
     
     private Administrator() {
-        initialiseConnection();
         programPropertiesManager = com.jogjadamai.infest.service.ProgramPropertiesManager.getInstance();
+        initialiseConnection();
     }
     
     protected static Administrator getIntance() {
@@ -87,16 +87,16 @@ public class Administrator {
     }
     
     protected void signIn(com.jogjadamai.infest.administrator.SignInGUI frame) {
-        com.jogjadamai.infest.communication.Credential savedCred = null;
+        com.jogjadamai.infest.communication.Credentials savedCred = null;
         try {    
-            savedCred = this.protocolServer.getCredential(protocolClient);
+            savedCred = this.protocolServer.getCredentials(protocolClient);
         } catch (java.rmi.RemoteException ex) {
-            savedCred = new com.jogjadamai.infest.communication.Credential("", new char[0]);System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            savedCred = new com.jogjadamai.infest.communication.Credentials("", new char[0]);System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
             javax.swing.JOptionPane.showMessageDialog(frame, "Infest API Server is unable to run!\n\n"
                 + "Program error detected.", "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
             fatalExit(-1);
         }
-        com.jogjadamai.infest.communication.Credential inputCred = new com.jogjadamai.infest.communication.Credential(frame.usernameField.getText(), frame.passwordField.getPassword());
+        com.jogjadamai.infest.communication.Credentials inputCred = new com.jogjadamai.infest.communication.Credentials(frame.usernameField.getText(), frame.passwordField.getPassword());
         try {
             String salt = null;
             salt = this.programPropertiesManager.getProperty("salt");
@@ -124,6 +124,7 @@ public class Administrator {
                     "INFEST: Program Configuration Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
             fatalExit(-1);
         }
+        System.out.println(savedCred.hashCode() + " vs " + inputCred.hashCode());
         if(savedCred.equals(inputCred)) {
             frame.setVisible(false);
         } else {
