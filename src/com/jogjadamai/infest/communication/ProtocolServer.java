@@ -51,7 +51,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.crypto.BadPaddingException;
@@ -1032,7 +1031,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         Credentials credential = new Credentials(user, pass);
         try {
             credential.encrpyt(getSalt());
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException | InvalidKeyException | InvalidParameterSpecException | UnsupportedEncodingException | IllegalBlockSizeException | BadPaddingException ex) {
+        } catch (Exception ex) {
             System.err.println("[INFEST] " + ex);
         }
         File credFile = new File("administrator.crd");
@@ -1055,7 +1054,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         Credentials credential = new Credentials(user, pass);
         try {
             credential.encrpyt(getSalt());
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException | InvalidKeyException | InvalidParameterSpecException | UnsupportedEncodingException | IllegalBlockSizeException | BadPaddingException ex) {
+        } catch (Exception ex) {
             System.err.println("[INFEST] " + ex);
         }
         File credFile = new File("operator.crd");

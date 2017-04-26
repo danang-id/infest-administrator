@@ -29,6 +29,9 @@ public class Administrator {
     
     private static Administrator INSTANCE;
     
+    private com.jogjadamai.infest.administrator.SignInGUI signInFrame;
+    private com.jogjadamai.infest.administrator.MainGUI mainFrame;
+    private ViewFrame activeFrame;
     private java.util.List<javax.swing.JCheckBox> featuresCheckBox;
     private java.util.List<com.jogjadamai.infest.entity.Features> features;
     private java.rmi.registry.Registry registry;
@@ -36,11 +39,15 @@ public class Administrator {
     private com.jogjadamai.infest.communication.IProtocolServer protocolServer;
     
     private final com.jogjadamai.infest.service.ProgramPropertiesManager programPropertiesManager;
-            
+    
+    private enum ViewFrame {
+        SIGN_IN, MAIN
+    }
     
     private Administrator() {
         programPropertiesManager = com.jogjadamai.infest.service.ProgramPropertiesManager.getInstance();
         initialiseConnection();
+        this.activeFrame = ViewFrame.SIGN_IN;
     }
     
     protected static Administrator getIntance() {
@@ -54,7 +61,7 @@ public class Administrator {
             serverAddress = programPropertiesManager.getProperty("serveraddress");
         } catch (java.lang.NullPointerException ex) {
             System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
-            javax.swing.JOptionPane.showMessageDialog(null, "Infest Configuration File is miss-configured!\n\n"
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, "Infest Configuration File is miss-configured!\n\n"
                     + "Please verify that the Infest Configuration File (infest.conf) is exist in the current\n"
                     + "working directory and is properly configured. Any wrong setting or modification of\n"
                     + "Infest Configuration File would cause this error.", "INFEST: Program Configuration Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
@@ -67,7 +74,7 @@ public class Administrator {
             this.protocolServer.authenticate(this.protocolClient);
         } catch (java.rmi.NotBoundException | java.rmi.RemoteException ex) {
             System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
-            javax.swing.JOptionPane.showMessageDialog(null, "Failed to initialise Infest API Server (on " + serverAddress  +")!\n\n"
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, "Failed to initialise Infest API Server (on " + serverAddress  +")!\n\n"
                 + "Program error detected.", "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
             fatalExit(-1);
         }
@@ -75,7 +82,7 @@ public class Administrator {
     
     private void fatalExit(int code) {
         System.err.println("[INFEST] " +  getNowTime() + ": System exited with code " + code + ".");
-        javax.swing.JOptionPane.showMessageDialog(null,
+        javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
                 "Fatal error occured! Please contact an Infest Adminisrator.\n\n"
                 + "CODE [" + code + "]\n"
                 + "Infest Program is now exiting.", "INFEST: System Error", javax.swing.JOptionPane.ERROR_MESSAGE);
@@ -86,49 +93,55 @@ public class Administrator {
         return java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(java.time.LocalDateTime.now());
     }
     
-    protected void signIn(com.jogjadamai.infest.administrator.SignInGUI frame) {
+    protected void setSignInFrame(com.jogjadamai.infest.administrator.SignInGUI signInFrame) {
+        this.signInFrame = signInFrame;
+    }
+    
+    protected void setMainFrame(com.jogjadamai.infest.administrator.MainGUI mainFrame) {
+        this.mainFrame = mainFrame;
+    }
+    
+    protected void signIn() {
         com.jogjadamai.infest.communication.Credentials savedCred = null;
         try {    
             savedCred = this.protocolServer.getCredentials(protocolClient);
         } catch (java.rmi.RemoteException ex) {
-            savedCred = new com.jogjadamai.infest.communication.Credentials("", new char[0]);System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
-            javax.swing.JOptionPane.showMessageDialog(frame, "Infest API Server is unable to run!\n\n"
-                + "Program error detected.", "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            savedCred = new com.jogjadamai.infest.communication.Credentials("", new char[0]);
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+                    "Infest API Server is unable to run!\n\n"
+                    + "Program error detected.", "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
             fatalExit(-1);
         }
-        com.jogjadamai.infest.communication.Credentials inputCred = new com.jogjadamai.infest.communication.Credentials(frame.usernameField.getText(), frame.passwordField.getPassword());
+        com.jogjadamai.infest.communication.Credentials inputCred = new com.jogjadamai.infest.communication.Credentials(signInFrame.usernameField.getText(), signInFrame.passwordField.getPassword());
         try {
             String salt = null;
             salt = this.programPropertiesManager.getProperty("salt");
             try {
                 inputCred.encrpyt(salt);
-            } catch (java.security.NoSuchAlgorithmException 
-                    | java.security.spec.InvalidKeySpecException 
-                    | javax.crypto.NoSuchPaddingException 
-                    | java.security.InvalidKeyException 
-                    | java.security.spec.InvalidParameterSpecException 
-                    | java.io.UnsupportedEncodingException 
-                    | javax.crypto.IllegalBlockSizeException 
-                    | javax.crypto.BadPaddingException ex) {
+            } catch (Exception ex) {
             System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
-            javax.swing.JOptionPane.showMessageDialog(frame, "Failed to encrypt credentials!\n\n"
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
+                    "Failed to encrypt credentials!\n\n"
                     + "Please contact an Infest Administrator for furhter help.", 
                     "INFEST: Encryption Service", javax.swing.JOptionPane.ERROR_MESSAGE);
             }
         } catch (NullPointerException ex) {
             System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
-            javax.swing.JOptionPane.showMessageDialog(frame, "Infest Configuration File is miss-configured!\n\n"
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+                    "Infest Configuration File is miss-configured!\n\n"
                     + "Please verify that the Infest Configuration File (infest.conf) is exist in the current\n"
                     + "working directory and is properly configured. Any wrong setting or modification of\n"
                     + "Infest Configuration File would cause this error.", 
                     "INFEST: Program Configuration Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
             fatalExit(-1);
         }
-        System.out.println(savedCred.hashCode() + " vs " + inputCred.hashCode());
         if(savedCred.equals(inputCred)) {
-            frame.setVisible(false);
+            signInFrame.setVisible(false);
+            mainFrame.setVisible(true);
+            activeFrame = ViewFrame.MAIN;
         } else {
-            javax.swing.JOptionPane.showMessageDialog(frame, 
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
                     "Sign In Failed!\n\n"
                     + "Either username or password is wrong, or your\n"
                     + "Infest Configuration File is miss-configured.", 
@@ -136,7 +149,20 @@ public class Administrator {
         }
     }
     
-    protected Boolean readAllFeatures(com.jogjadamai.infest.administrator.MainGUI frame) {
+    protected void signOut() {
+        mainFrame.setVisible(false);
+        signInFrame.setVisible(true);
+        activeFrame = ViewFrame.SIGN_IN;
+    }
+    
+    protected void shutdown(int code) {
+        System.out.println("[INFEST] " +  getNowTime() + ": System exited with code " + code + ".");
+        signInFrame.setVisible(false);
+        mainFrame.setVisible(false);
+        System.exit(code);
+    }
+    
+    protected Boolean readAllFeatures() {
         Boolean isSuccess = true;
         try {
             this.features = this.protocolServer.readAllFeature(protocolClient);
@@ -144,36 +170,36 @@ public class Administrator {
             java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         this.featuresCheckBox = new java.util.ArrayList<>();
-        this.featuresCheckBox.add(frame.maintenanceModeCheckBox);
-        this.featuresCheckBox.add(frame.showCurrencyCheckBox);
-        this.featuresCheckBox.add(frame.operatorGenerateReportCheckBox);
-        this.featuresCheckBox.add(frame.customerPrintBillCheckBox);
-        this.featuresCheckBox.add(frame.customerShowMenuDurationCheckBox);
-        this.featuresCheckBox.add(frame.customerShowMenuImageCheckBox);
+        this.featuresCheckBox.add(mainFrame.maintenanceModeCheckBox);
+        this.featuresCheckBox.add(mainFrame.showCurrencyCheckBox);
+        this.featuresCheckBox.add(mainFrame.operatorGenerateReportCheckBox);
+        this.featuresCheckBox.add(mainFrame.customerPrintBillCheckBox);
+        this.featuresCheckBox.add(mainFrame.customerShowMenuDurationCheckBox);
+        this.featuresCheckBox.add(mainFrame.customerShowMenuImageCheckBox);
         features.forEach((feature) -> {
             this.featuresCheckBox.get(feature.getId()-1).setSelected((feature.getStatus() == 1));
-            if(feature.getName().equals("CURRENCY")) frame.currencyTextField.setText(feature.getDescription());
+            if(feature.getName().equals("CURRENCY")) mainFrame.currencyTextField.setText(feature.getDescription());
         });
         return isSuccess;
     }
     
-    protected Boolean writeAllFeatures(com.jogjadamai.infest.administrator.MainGUI frame) {
+    protected Boolean writeAllFeatures() {
         Boolean isSuccess = true;
         try {
             this.features = this.protocolServer.readAllFeature(protocolClient);
         } catch (java.rmi.RemoteException ex) {
             java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        this.featuresCheckBox.add(frame.maintenanceModeCheckBox);
-        this.featuresCheckBox.add(frame.showCurrencyCheckBox);
-        this.featuresCheckBox.add(frame.operatorGenerateReportCheckBox);
-        this.featuresCheckBox.add(frame.customerPrintBillCheckBox);
-        this.featuresCheckBox.add(frame.customerShowMenuDurationCheckBox);
-        this.featuresCheckBox.add(frame.customerShowMenuImageCheckBox);
+        this.featuresCheckBox.add(mainFrame.maintenanceModeCheckBox);
+        this.featuresCheckBox.add(mainFrame.showCurrencyCheckBox);
+        this.featuresCheckBox.add(mainFrame.operatorGenerateReportCheckBox);
+        this.featuresCheckBox.add(mainFrame.customerPrintBillCheckBox);
+        this.featuresCheckBox.add(mainFrame.customerShowMenuDurationCheckBox);
+        this.featuresCheckBox.add(mainFrame.customerShowMenuImageCheckBox);
         features.forEach((feature) -> {
             if(featuresCheckBox.get(feature.getId()-1).isSelected()) feature.setStatus(1);
             else feature.setStatus(0);
-            if(feature.getName().equals("CURRENCY")) feature.setDescription(frame.currencyTextField.getText());
+            if(feature.getName().equals("CURRENCY")) feature.setDescription(mainFrame.currencyTextField.getText());
             try {
                 this.protocolServer.updateFeature(protocolClient, feature);
             } catch (java.rmi.RemoteException ex) {
@@ -184,56 +210,56 @@ public class Administrator {
         return isSuccess;
     }
     
-    protected void refreshServerStatus(com.jogjadamai.infest.administrator.MainGUI frame) {
+    protected void refreshServerStatus() {
         try {
             if(com.jogjadamai.infest.communication.ProtocolServer.getInstance().isServerActive()) {
-                frame.statusLabel.setText("Started & Listening");
-                frame.statusLabel.setForeground(java.awt.Color.BLUE);
-                frame.serverToggleButton.setText("STOP SERVER");
-                frame.serverToggleButton.setForeground(java.awt.Color.RED);
-                this.repaintPane(frame, true);
-                if (!this.readAllFeatures(frame)) javax.swing.JOptionPane.showMessageDialog(frame, "Failed to read Features Configuration!", "Read Configuration", javax.swing.JOptionPane.ERROR_MESSAGE);
+                mainFrame.statusLabel.setText("Started & Listening");
+                mainFrame.statusLabel.setForeground(java.awt.Color.BLUE);
+                mainFrame.serverToggleButton.setText("STOP SERVER");
+                mainFrame.serverToggleButton.setForeground(java.awt.Color.RED);
+                this.repaintPane(true);
+                if (!this.readAllFeatures()) javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, "Failed to read Features Configuration!", "Read Configuration", javax.swing.JOptionPane.ERROR_MESSAGE);
             } else {
-                frame.statusLabel.setText("Idle");
-                frame.statusLabel.setForeground(java.awt.Color.RED);
-                frame.serverToggleButton.setText("START SERVER");
-                frame.serverToggleButton.setForeground(java.awt.Color.BLUE);
-                this.repaintPane(frame, false);
+                mainFrame.statusLabel.setText("Idle");
+                mainFrame.statusLabel.setForeground(java.awt.Color.RED);
+                mainFrame.serverToggleButton.setText("START SERVER");
+                mainFrame.serverToggleButton.setForeground(java.awt.Color.BLUE);
+                this.repaintPane(false);
             }
         } catch (java.rmi.RemoteException ex) {
             java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
     }
     
-    protected void repaintPane(com.jogjadamai.infest.administrator.MainGUI frame, Boolean isEnabled) {
+    protected void repaintPane(Boolean isEnabled) {
         if(!isEnabled) {
-            frame.maintenanceModeCheckBox.setSelected(isEnabled);
-            frame.showCurrencyCheckBox.setSelected(isEnabled);
-            frame.currencyTextField.setText("");
-            frame.operatorGenerateReportCheckBox.setSelected(isEnabled);
-            frame.customerPrintBillCheckBox.setSelected(isEnabled);
-            frame.customerShowMenuDurationCheckBox.setSelected(isEnabled);
-            frame.customerShowMenuImageCheckBox.setSelected(isEnabled);
+            mainFrame.maintenanceModeCheckBox.setSelected(isEnabled);
+            mainFrame.showCurrencyCheckBox.setSelected(isEnabled);
+            mainFrame.currencyTextField.setText("");
+            mainFrame.operatorGenerateReportCheckBox.setSelected(isEnabled);
+            mainFrame.customerPrintBillCheckBox.setSelected(isEnabled);
+            mainFrame.customerShowMenuDurationCheckBox.setSelected(isEnabled);
+            mainFrame.customerShowMenuImageCheckBox.setSelected(isEnabled);
         }
-        frame.maintenanceModeCheckBox.setEnabled(isEnabled);
-        frame.showCurrencyCheckBox.setEnabled(isEnabled);
-        frame.currencyTextField.setEnabled(isEnabled);
-        frame.operatorGenerateReportCheckBox.setEnabled(isEnabled);
-        frame.customerPrintBillCheckBox.setEnabled(isEnabled);
-        frame.customerShowMenuDurationCheckBox.setEnabled(isEnabled);
-        frame.customerShowMenuImageCheckBox.setEnabled(isEnabled);
-        frame.saveFeaturesConfiguration.setEnabled(isEnabled);
-        frame.featurePanel.setEnabled(isEnabled);
+        mainFrame.maintenanceModeCheckBox.setEnabled(isEnabled);
+        mainFrame.showCurrencyCheckBox.setEnabled(isEnabled);
+        mainFrame.currencyTextField.setEnabled(isEnabled);
+        mainFrame.operatorGenerateReportCheckBox.setEnabled(isEnabled);
+        mainFrame.customerPrintBillCheckBox.setEnabled(isEnabled);
+        mainFrame.customerShowMenuDurationCheckBox.setEnabled(isEnabled);
+        mainFrame.customerShowMenuImageCheckBox.setEnabled(isEnabled);
+        mainFrame.saveFeaturesConfiguration.setEnabled(isEnabled);
+        mainFrame.featurePanel.setEnabled(isEnabled);
     }
         
-    protected void toggleServer(com.jogjadamai.infest.administrator.MainGUI frame) {
+    protected void toggleServer() {
         try {
             if(!com.jogjadamai.infest.communication.ProtocolServer.getInstance().isServerActive()) com.jogjadamai.infest.communication.ProtocolServer.getInstance().start();
             else com.jogjadamai.infest.communication.ProtocolServer.getInstance().stop();
         } catch (java.rmi.RemoteException ex) {
             java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        this.refreshServerStatus(frame);
+        this.refreshServerStatus();
     }
     
 }

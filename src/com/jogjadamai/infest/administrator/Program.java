@@ -33,9 +33,6 @@ public final class Program {
     private static Thread MainGUIThread, SignInGUIThread;
     private static com.jogjadamai.infest.communication.IProtocolServer Server;
     
-    private static final Integer[] SECURITY_NUMBER = {
-        -1358083639, 266374003
-    };
     
     public static void main(String[] args) throws RemoteException {
         Program.MainGUI = new MainGUI();

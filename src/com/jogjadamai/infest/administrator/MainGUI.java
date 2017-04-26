@@ -235,13 +235,13 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
     }
     
     private void saveFeaturesConfigurationActionPerformed(java.awt.event.ActionEvent evt) { 
-        if (administrator.writeAllFeatures(this)) javax.swing.JOptionPane.showMessageDialog(this, "Features Configuration saved successfully!", "Save Configuration", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        if (administrator.writeAllFeatures()) javax.swing.JOptionPane.showMessageDialog(this, "Features Configuration saved successfully!", "Save Configuration", javax.swing.JOptionPane.INFORMATION_MESSAGE);
         else javax.swing.JOptionPane.showMessageDialog(this, "Features Configuration failed to be save!", "Save Configuration", javax.swing.JOptionPane.ERROR_MESSAGE);
-        if (!administrator.readAllFeatures(this)) javax.swing.JOptionPane.showMessageDialog(this, "Failed to read Features Configuration!", "Read Configuration", javax.swing.JOptionPane.ERROR_MESSAGE);
+        if (!administrator.readAllFeatures()) javax.swing.JOptionPane.showMessageDialog(this, "Failed to read Features Configuration!", "Read Configuration", javax.swing.JOptionPane.ERROR_MESSAGE);
     }                                                         
 
     private void serverToggleButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        administrator.toggleServer(this);
+        administrator.toggleServer();
     }   
     
     private void showCurrencyCheckBoxStateChanged(javax.swing.event.ChangeEvent evt) {
@@ -278,7 +278,8 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
     @Override
     public void run() {
         administrator = Administrator.getIntance();
-        administrator.refreshServerStatus(this);
+        administrator.setMainFrame(this);
+        administrator.refreshServerStatus();
         
         getContentPane().setBackground(new java.awt.Color(0xffffff));
         setLocationRelativeTo(null);

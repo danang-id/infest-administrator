@@ -219,15 +219,15 @@ public final class SignInGUI extends javax.swing.JFrame implements Runnable {
 
     
     private void signInButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        administrator.signIn(this);
+        administrator.signIn();
     }  
     
     private void usernameFieldActionPerformed(java.awt.event.ActionEvent evt) {
-        administrator.signIn(this);
+        administrator.signIn();
     }  
     
     private void passwordFieldActionPerformed(java.awt.event.ActionEvent evt) {
-        administrator.signIn(this);
+        administrator.signIn();
     }  
     
     private void exitButtonActionPerformed(java.awt.event.ActionEvent evt) { 
@@ -253,6 +253,8 @@ public final class SignInGUI extends javax.swing.JFrame implements Runnable {
     @Override
     public void run() {
         administrator = Administrator.getIntance();
+        administrator.setSignInFrame(this);
+        
         getContentPane().setBackground(new java.awt.Color(0x651112));
         setLocationRelativeTo(null);
         setVisible(true);
