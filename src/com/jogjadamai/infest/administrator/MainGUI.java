@@ -34,12 +34,6 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
             java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         initialiseComponents();
-        initialiseController();
-    }
-
-    private void initialiseController() {
-        administrator = Administrator.getIntance();
-        administrator.setMainFrame(this);
     }
     
     private void initialiseComponents() {
@@ -58,6 +52,17 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
         infestLogoLabel = new javax.swing.JLabel();
         serverStatusLabel = new javax.swing.JLabel();
         statusLabel = new javax.swing.JLabel();
+        menuBar = new javax.swing.JMenuBar();
+        programMenu = new javax.swing.JMenu();
+        signOutMenuItem = new javax.swing.JMenuItem();
+        exitMenuItem = new javax.swing.JMenuItem();
+        credentialsManagerMenu = new javax.swing.JMenu();
+        changePasswordMenuItem = new javax.swing.JMenuItem();
+        credentialsManagerMenuSeparator = new javax.swing.JPopupMenu.Separator();
+        setCustomOperatorCredentialMenuItem = new javax.swing.JMenuItem();
+        resetOperatorCredential = new javax.swing.JMenuItem();
+        helpMenu = new javax.swing.JMenu();
+        seeDocumentationMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("INFEST: Administrator Panel");
@@ -203,6 +208,69 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
         statusLabel.setText("<STATUS>");
         statusLabel.setToolTipText("Current Infest API Server status.");
 
+        programMenu.setText("Program");
+        programMenu.setToolTipText("Ask the program...");
+        programMenu.setName("programMenu"); // NOI18N
+
+        signOutMenuItem.setText("Sign Out");
+        signOutMenuItem.setToolTipText("Sign out from the application.");
+        signOutMenuItem.setDoubleBuffered(true);
+        signOutMenuItem.setName("signOutMenuItem"); // NOI18N
+        signOutMenuItem.addActionListener(this::signOutMenuItemActionPerformed);
+        programMenu.add(signOutMenuItem);
+
+        exitMenuItem.setText("Exit");
+        exitMenuItem.setToolTipText("Good bye!");
+        exitMenuItem.setDoubleBuffered(true);
+        exitMenuItem.setName("exitMenuItem"); // NOI18N
+        exitMenuItem.addActionListener(this::exitMenuItemActionPerformed);
+        programMenu.add(exitMenuItem);
+
+        menuBar.add(programMenu);
+
+        credentialsManagerMenu.setText("Credentials Manager");
+        credentialsManagerMenu.setToolTipText("Manage credentials.");
+        credentialsManagerMenu.setName("credentialsManagerMenu"); // NOI18N
+
+        changePasswordMenuItem.setText("Change Administrator Password");
+        changePasswordMenuItem.setToolTipText("Change Administrator Password");
+        changePasswordMenuItem.setName("changePasswordMenuItem"); // NOI18N
+        changePasswordMenuItem.addActionListener(this::changePasswordMenuItemActionPerformed);
+        credentialsManagerMenu.add(changePasswordMenuItem);
+
+        credentialsManagerMenuSeparator.setDoubleBuffered(true);
+        credentialsManagerMenuSeparator.setName("credentialsManagerMenuSeparator"); // NOI18N
+        credentialsManagerMenu.add(credentialsManagerMenuSeparator);
+
+        setCustomOperatorCredentialMenuItem.setText("Set Custom Operator Credential");
+        setCustomOperatorCredentialMenuItem.setToolTipText("Set custom Operator credential.");
+        setCustomOperatorCredentialMenuItem.setName("setCustomOperatorCredentialMenuItem"); // NOI18N
+        setCustomOperatorCredentialMenuItem.addActionListener(this::setCustomOperatorCredentialMenuItemActionPerformed);
+        credentialsManagerMenu.add(setCustomOperatorCredentialMenuItem);
+
+        resetOperatorCredential.setText("Reset Operator Credential");
+        resetOperatorCredential.setToolTipText("Reset Operator credential.");
+        resetOperatorCredential.setName("resetOperatorCredential"); // NOI18N
+        resetOperatorCredential.addActionListener(this::resetOperatorCredentialMenuItemActionPerformed);
+        credentialsManagerMenu.add(resetOperatorCredential);
+
+        menuBar.add(credentialsManagerMenu);
+
+        helpMenu.setText("Help");
+        helpMenu.setToolTipText("Do you need assistance?");
+        helpMenu.setName("helpMenu"); // NOI18N
+
+        seeDocumentationMenuItem.setText("See Documentation");
+        seeDocumentationMenuItem.setToolTipText("Open the documentation file of the program.");
+        seeDocumentationMenuItem.setDoubleBuffered(true);
+        seeDocumentationMenuItem.setName("seeDocumentationMenuItem"); // NOI18N
+        seeDocumentationMenuItem.addActionListener(this::seeDocumentationMenuItemActionPerformed);
+        helpMenu.add(seeDocumentationMenuItem);
+
+        menuBar.add(helpMenu);
+
+        setJMenuBar(menuBar);
+        
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -263,26 +331,62 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
         administrator.signOut();
     } 
     
+    private void signOutMenuItemActionPerformed(java.awt.event.ActionEvent evt) {                                                
+        administrator.signOut();
+    }                                               
+
+    private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {                                             
+        administrator.shutdown(1);
+    }                                            
+
+    private void seeDocumentationMenuItemActionPerformed(java.awt.event.ActionEvent evt) {                                                         
+        administrator.openDocumentation();
+    }  
+    
+    private void changePasswordMenuItemActionPerformed(java.awt.event.ActionEvent evt) {                                                         
+        administrator.changePassword();
+    }  
+    
+    private void setCustomOperatorCredentialMenuItemActionPerformed(java.awt.event.ActionEvent evt) {                                                         
+        administrator.setOperatorCredentials();
+    }  
+    
+    private void resetOperatorCredentialMenuItemActionPerformed(java.awt.event.ActionEvent evt) {                                                         
+        administrator.resetOperatorCredentials();
+    }   
+    
     // Variables declaration - do not modify                     
+    protected javax.swing.JMenuItem changePasswordMenuItem;
+    protected javax.swing.JMenu credentialsManagerMenu;
+    protected javax.swing.JPopupMenu.Separator credentialsManagerMenuSeparator;
     protected javax.swing.JTextField currencyTextField;
     protected javax.swing.JCheckBox customerPrintBillCheckBox;
     protected javax.swing.JCheckBox customerShowMenuDurationCheckBox;
     protected javax.swing.JCheckBox customerShowMenuImageCheckBox;
+    protected javax.swing.JMenuItem exitMenuItem;
     protected javax.swing.JPanel featurePanel;
+    protected javax.swing.JMenu helpMenu;
     protected javax.swing.JLabel infestLogoLabel;
     protected javax.swing.JPanel logoPanel;
     protected javax.swing.JCheckBox maintenanceModeCheckBox;
+    protected javax.swing.JMenuBar menuBar;
     protected javax.swing.JCheckBox operatorGenerateReportCheckBox;
+    protected javax.swing.JMenu programMenu;
+    protected javax.swing.JMenuItem resetOperatorCredential;
     protected javax.swing.JButton saveFeaturesConfiguration;
+    protected javax.swing.JMenuItem seeDocumentationMenuItem;
     protected javax.swing.JLabel serverStatusLabel;
     protected javax.swing.JToggleButton serverToggleButton;
+    protected javax.swing.JMenuItem setCustomOperatorCredentialMenuItem;
     protected javax.swing.JCheckBox showCurrencyCheckBox;
+    protected javax.swing.JMenuItem signOutMenuItem;
     protected javax.swing.JLabel statusLabel;
     protected com.jogjadamai.infest.administrator.Administrator administrator;
     // End of variables declaration  
     
     @Override
     public void run() {
+        administrator = com.jogjadamai.infest.administrator.Administrator.getInstance();
         administrator.refreshServerStatus();
         getContentPane().setBackground(new java.awt.Color(0xffffff));
         setLocationRelativeTo(null);

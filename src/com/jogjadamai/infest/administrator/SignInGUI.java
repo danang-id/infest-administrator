@@ -34,12 +34,6 @@ public final class SignInGUI extends javax.swing.JFrame implements Runnable {
             java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         initialiseComponents();
-        initialiseController();
-    }
-    
-    private void initialiseController() {
-        administrator = Administrator.getIntance();
-        administrator.setSignInFrame(this);
     }
     
     private void initialiseComponents() {
@@ -258,6 +252,7 @@ public final class SignInGUI extends javax.swing.JFrame implements Runnable {
 
     @Override
     public void run() {
+        administrator = Administrator.getInstance();
         getContentPane().setBackground(new java.awt.Color(0x651112));
         setLocationRelativeTo(null);
         setVisible(true);

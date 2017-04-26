@@ -50,7 +50,7 @@ public class Administrator {
         this.activeFrame = ViewFrame.SIGN_IN;
     }
     
-    protected static Administrator getIntance() {
+    protected static Administrator getInstance() {
         if(INSTANCE == null) INSTANCE = new Administrator();
         return INSTANCE;
     }
@@ -260,6 +260,85 @@ public class Administrator {
             java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         this.refreshServerStatus();
+    }
+    
+    protected void openDocumentation() {
+        javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+            "Documentation of this program is not yet available. Please check on further release.\n\nThank you!",
+            "INFEST: Documentation", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    protected void changePassword() {
+        javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+            "Credential Manager features are not yet available. Please check on further release.\n\nThank you!",
+            "INFEST: Credentials Manager", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    protected void setOperatorCredentials() {
+        javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+            "Credential Manager features are not yet available. Please check on further release.\n\nThank you!",
+            "INFEST: Credentials Manager", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    protected void resetOperatorCredentials() {
+        if(javax.swing.JOptionPane.showConfirmDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
+                "Are you sure to reset Operator credentials?", 
+                "INFEST: Credentials Manager", 
+                javax.swing.JOptionPane.YES_NO_OPTION, 
+                javax.swing.JOptionPane.QUESTION_MESSAGE) == javax.swing.JOptionPane.YES_OPTION){
+            createDefaultOperatorCredential();
+        }
+    }
+    
+    private String getSalt() {
+        com.jogjadamai.infest.service.ProgramPropertiesManager ppm = com.jogjadamai.infest.service.ProgramPropertiesManager.getInstance();
+        String salt;
+        try {
+            salt = ppm.getProperty("salt");
+        } catch(NullPointerException npe) {
+            java.security.SecureRandom secureRandom;
+            byte[] saltBytes = new byte[32];
+            try {
+                secureRandom = java.security.SecureRandom.getInstance("SHA1PRNG");
+                secureRandom.nextBytes(saltBytes);
+            } catch (java.security.NoSuchAlgorithmException ex) {
+                secureRandom = new java.security.SecureRandom();
+                secureRandom.nextBytes(saltBytes);
+                System.err.println("[INFEST] " + ex);
+            } finally {
+                salt = java.util.Base64.getEncoder().encodeToString(saltBytes);
+                ppm.setProperty("salt", salt);
+            }
+        }
+        return salt;
+    }
+    
+    private void createDefaultOperatorCredential() {
+        String user = "infestoperator";
+        char[] pass = {
+            'o', 'p', 'e', 'r', 'a', 't', 'o', 'r', 'i', 'n', 'f', 'e', 's', 't'
+        };
+        com.jogjadamai.infest.communication.Credentials credential = new com.jogjadamai.infest.communication.Credentials(user, pass);
+        try {
+            credential.encrpyt(getSalt());
+            java.io.File credFile = new java.io.File("operator.crd");
+            try {
+                credFile.createNewFile();
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
+                java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
+                oos.writeObject(credential);
+            } catch (java.io.IOException ex) {
+                System.err.println("[INFEST] " + ex);
+                javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
+                        "Failed to create credentials file.",
+                        "INFEST: Credentials Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception ex) {
+            System.err.println("[INFEST] " + ex);
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
+                    "Failed to encrypt credentials.",
+                    "INFEST: Encryption System", javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
     }
     
 }

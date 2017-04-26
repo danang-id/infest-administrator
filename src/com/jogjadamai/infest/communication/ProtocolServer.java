@@ -1028,19 +1028,19 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         char[] pass = {
             'a', 'd', 'm', 'i', 'n', 'i', 'n', 'f', 'e', 's', 't'
         };
-        Credentials credential = new Credentials(user, pass);
+        com.jogjadamai.infest.communication.Credentials credential = new com.jogjadamai.infest.communication.Credentials(user, pass);
         try {
             credential.encrpyt(getSalt());
+            java.io.File credFile = new java.io.File("operator.crd");
+            try {
+                credFile.createNewFile();
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
+                java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
+                oos.writeObject(credential);
+            } catch (java.io.IOException ex) {
+                System.err.println("[INFEST] " + ex);
+            }
         } catch (Exception ex) {
-            System.err.println("[INFEST] " + ex);
-        }
-        File credFile = new File("administrator.crd");
-        try {
-            credFile.createNewFile();
-            FileOutputStream fos = new FileOutputStream(credFile, false);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(credential);
-        } catch (IOException ex) {
             System.err.println("[INFEST] " + ex);
         }
         return credential;
@@ -1051,19 +1051,19 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         char[] pass = {
             'o', 'p', 'e', 'r', 'a', 't', 'o', 'r', 'i', 'n', 'f', 'e', 's', 't'
         };
-        Credentials credential = new Credentials(user, pass);
+        com.jogjadamai.infest.communication.Credentials credential = new com.jogjadamai.infest.communication.Credentials(user, pass);
         try {
             credential.encrpyt(getSalt());
+            java.io.File credFile = new java.io.File("operator.crd");
+            try {
+                credFile.createNewFile();
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
+                java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
+                oos.writeObject(credential);
+            } catch (java.io.IOException ex) {
+                System.err.println("[INFEST] " + ex);
+            }
         } catch (Exception ex) {
-            System.err.println("[INFEST] " + ex);
-        }
-        File credFile = new File("operator.crd");
-        try {
-            credFile.createNewFile();
-            FileOutputStream fos = new FileOutputStream(credFile, false);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(credential);
-        } catch (IOException ex) {
             System.err.println("[INFEST] " + ex);
         }
         return credential;
