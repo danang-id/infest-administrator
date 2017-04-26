@@ -33,7 +33,7 @@ public final class Program {
     private static Administrator Controller;
     private static com.jogjadamai.infest.communication.IProtocolServer Server;
     
-    public static void main(String[] args) throws RemoteException {
+    public static void main(String[] args) throws java.rmi.RemoteException {
         Program.Server = com.jogjadamai.infest.communication.ProtocolServer.getInstance();
         Program.Controller = Administrator.getInstance();
         Program.SignInGUI = new SignInGUI();
