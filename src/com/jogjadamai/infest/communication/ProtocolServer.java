@@ -1121,7 +1121,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                             System.err.println("[INFEST] " + ex);
                         }
                     } else {
-                        credential = createDefaultAdministratorCredential();
+                        credential = createDefaultOperatorCredential();
                     }
                     break;
                 default:
