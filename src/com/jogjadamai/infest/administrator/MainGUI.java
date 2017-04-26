@@ -34,8 +34,14 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
             java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         initialiseComponents();
+        initialiseController();
     }
 
+    private void initialiseController() {
+        administrator = Administrator.getIntance();
+        administrator.setMainFrame(this);
+    }
+    
     private void initialiseComponents() {
         
         featurePanel = new javax.swing.JPanel();
@@ -254,7 +260,7 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
     }
     
     private void formWindowClosed(java.awt.event.WindowEvent evt) {                                  
-        Program.showSignInGUI();
+        administrator.signOut();
     } 
     
     // Variables declaration - do not modify                     
@@ -277,13 +283,9 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
     
     @Override
     public void run() {
-        administrator = Administrator.getIntance();
-        administrator.setMainFrame(this);
         administrator.refreshServerStatus();
-        
         getContentPane().setBackground(new java.awt.Color(0xffffff));
         setLocationRelativeTo(null);
-        setVisible(true);
     }
 
 }

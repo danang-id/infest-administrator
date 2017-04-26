@@ -33,17 +33,13 @@ public final class Program {
     private static Thread MainGUIThread, SignInGUIThread;
     private static com.jogjadamai.infest.communication.IProtocolServer Server;
     
-    
     public static void main(String[] args) throws RemoteException {
         Program.MainGUI = new MainGUI();
         Program.SignInGUI = new SignInGUI();
         Program.MainGUIThread = new Thread(Program.MainGUI);
         Program.SignInGUIThread = new Thread(Program.SignInGUI);
         Program.Server = com.jogjadamai.infest.communication.ProtocolServer.getInstance();
-        Program.showSignInGUI();
-    }
-    
-    protected static void showSignInGUI() {
+        java.awt.EventQueue.invokeLater(Program.MainGUIThread);
         java.awt.EventQueue.invokeLater(Program.SignInGUIThread);
     }
     
