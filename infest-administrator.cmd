@@ -16,7 +16,7 @@ echo  [                                                                       ]
 echo  [                     INFEST ADMINISTRATOR CONSOLE                      ] 
 echo  [                                                                       ]
 echo  -------------------------------------------------------------------------
-java -jar "store\Infest-Administrator.jar"
+javaw -jar "store\Infest-Administrator.jar"
 pause
 exit
 

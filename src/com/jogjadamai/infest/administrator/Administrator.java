@@ -25,7 +25,7 @@ package com.jogjadamai.infest.administrator;
  * @author Danang Galuh Tegar P
  * @version 2017.03.10.0001
  */
-public class Administrator {
+public final class Administrator {
     
     private static Administrator INSTANCE;
     
@@ -74,8 +74,10 @@ public class Administrator {
             this.protocolServer.authenticate(this.protocolClient);
         } catch (java.rmi.NotBoundException | java.rmi.RemoteException ex) {
             System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
-            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, "Failed to initialise Infest API Server (on " + serverAddress  +")!\n\n"
-                + "Program error detected.", "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+                    "There's is an error with Infest API Server! Please contact Infest Developer Team.\n\n"
+                            + "Program error detected.", 
+                    "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
             fatalExit(-1);
         }
     }
@@ -101,56 +103,76 @@ public class Administrator {
         this.mainFrame = mainFrame;
     }
     
-    protected void signIn() {
+    private Boolean isCredentialsCurrent(java.awt.Component parent, com.jogjadamai.infest.communication.Credentials credentials) {
         com.jogjadamai.infest.communication.Credentials savedCred = null;
         try {    
             savedCred = this.protocolServer.getCredentials(protocolClient);
+            if(savedCred == null) {
+                savedCred = new com.jogjadamai.infest.communication.Credentials("", new char[0]);
+                System.err.println("[INFEST] " +  getNowTime() + ": " + "java.lang.NullPointerException");
+                javax.swing.JOptionPane.showMessageDialog(parent, 
+                        "Infest Configuration File is miss-configured!\n\n"
+                        + "Please verify that the Infest Configuration File (infest.conf) is exist in the current\n"
+                        + "working directory and is properly configured. Any wrong setting or modification of\n"
+                        + "Infest Configuration File would cause this error.", 
+                        "INFEST: Program Configuration Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+                fatalExit(-1);
+            }
+            try {
+                String salt = getSalt();
+                try {
+                    credentials.encrpyt(salt);
+                    return savedCred.equals(credentials);
+                } catch (Exception ex) {
+                    System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+                    javax.swing.JOptionPane.showMessageDialog(parent,
+                            "Failed to encrypt credentials!\n\n"
+                            + "Please contact an Infest Administrator for furhter help.", 
+                            "INFEST: Encryption Service", javax.swing.JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+            } catch (NullPointerException ex) {
+                System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+                javax.swing.JOptionPane.showMessageDialog(parent, 
+                        "Infest Configuration File is miss-configured!\n\n"
+                        + "Please verify that the Infest Configuration File (infest.conf) is exist in the current\n"
+                        + "working directory and is properly configured. Any wrong setting or modification of\n"
+                        + "Infest Configuration File would cause this error.", 
+                        "INFEST: Program Configuration Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+                fatalExit(-1);
+                return false;
+            }
         } catch (java.rmi.RemoteException ex) {
             savedCred = new com.jogjadamai.infest.communication.Credentials("", new char[0]);
             System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
-            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
-                    "Infest API Server is unable to run!\n\n"
-                    + "Program error detected.", "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            javax.swing.JOptionPane.showMessageDialog(parent, 
+                    "There's is an error with Infest API Server! Please contact Infest Developer Team.\n\n"
+                            + "Program error detected.", 
+                    "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
             fatalExit(-1);
+            return false;
         }
-        com.jogjadamai.infest.communication.Credentials inputCred = new com.jogjadamai.infest.communication.Credentials(signInFrame.usernameField.getText(), signInFrame.passwordField.getPassword());
-        try {
-            String salt = null;
-            salt = this.programPropertiesManager.getProperty("salt");
-            try {
-                inputCred.encrpyt(salt);
-            } catch (Exception ex) {
-            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
-            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
-                    "Failed to encrypt credentials!\n\n"
-                    + "Please contact an Infest Administrator for furhter help.", 
-                    "INFEST: Encryption Service", javax.swing.JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (NullPointerException ex) {
-            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
-            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
-                    "Infest Configuration File is miss-configured!\n\n"
-                    + "Please verify that the Infest Configuration File (infest.conf) is exist in the current\n"
-                    + "working directory and is properly configured. Any wrong setting or modification of\n"
-                    + "Infest Configuration File would cause this error.", 
-                    "INFEST: Program Configuration Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
-            fatalExit(-1);
-        }
-        if(savedCred.equals(inputCred)) {
+    }
+    
+    protected void signIn() {
+        if(isCredentialsCurrent((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, new com.jogjadamai.infest.communication.Credentials(signInFrame.usernameField.getText(), signInFrame.passwordField.getPassword()))) {
             signInFrame.setVisible(false);
             mainFrame.setVisible(true);
             activeFrame = ViewFrame.MAIN;
         } else {
             javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
-                    "Sign In Failed!\n\n"
-                    + "Either username or password is wrong, or your\n"
-                    + "Infest Configuration File is miss-configured.", 
+                    "Authentication Failed!\n\n"
+                        + "Either username or password is wrong, or your\n"
+                        + "Infest Configuration File is miss-configured.",
                     "INFEST: Authentication System", javax.swing.JOptionPane.ERROR_MESSAGE);
         }
     }
     
     protected void signOut() {
         mainFrame.setVisible(false);
+        signInFrame.usernameField.setText("");
+        signInFrame.usernameField.requestFocusInWindow();
+        signInFrame.passwordField.setText("");
         signInFrame.setVisible(true);
         activeFrame = ViewFrame.SIGN_IN;
     }
@@ -167,7 +189,12 @@ public class Administrator {
         try {
             this.features = this.protocolServer.readAllFeature(protocolClient);
         } catch (java.rmi.RemoteException ex) {
-            java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+                    "There's is an error with Infest API Server! Please contact Infest Developer Team.\n\n"
+                            + "Program error detected.", 
+                    "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            fatalExit(-1);
         }
         this.featuresCheckBox = new java.util.ArrayList<>();
         this.featuresCheckBox.add(mainFrame.maintenanceModeCheckBox);
@@ -188,7 +215,12 @@ public class Administrator {
         try {
             this.features = this.protocolServer.readAllFeature(protocolClient);
         } catch (java.rmi.RemoteException ex) {
-            java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+                    "There's is an error with Infest API Server! Please contact Infest Developer Team.\n\n"
+                            + "Program error detected.", 
+                    "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            fatalExit(-1);
         }
         this.featuresCheckBox.add(mainFrame.maintenanceModeCheckBox);
         this.featuresCheckBox.add(mainFrame.showCurrencyCheckBox);
@@ -203,7 +235,12 @@ public class Administrator {
             try {
                 this.protocolServer.updateFeature(protocolClient, feature);
             } catch (java.rmi.RemoteException ex) {
-                java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+                System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+                javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+                        "There's is an error with Infest API Server! Please contact Infest Developer Team.\n\n"
+                                + "Program error detected.", 
+                        "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+                fatalExit(-1);
             }
         });
         isSuccess = true;
@@ -227,7 +264,12 @@ public class Administrator {
                 this.repaintPane(false);
             }
         } catch (java.rmi.RemoteException ex) {
-            java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+                    "There's is an error with Infest API Server! Please contact Infest Developer Team.\n\n"
+                            + "Program error detected.", 
+                    "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            fatalExit(-1);
         }
     }
     
@@ -257,7 +299,12 @@ public class Administrator {
             if(!com.jogjadamai.infest.communication.ProtocolServer.getInstance().isServerActive()) com.jogjadamai.infest.communication.ProtocolServer.getInstance().start();
             else com.jogjadamai.infest.communication.ProtocolServer.getInstance().stop();
         } catch (java.rmi.RemoteException ex) {
-            java.util.logging.Logger.getLogger(MainGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+                    "There's is an error with Infest API Server! Please contact Infest Developer Team.\n\n"
+                            + "Program error detected.", 
+                    "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            fatalExit(-1);
         }
         this.refreshServerStatus();
     }
@@ -269,15 +316,66 @@ public class Administrator {
     }
     
     protected void changePassword() {
-        javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
-            "Credential Manager features are not yet available. Please check on further release.\n\nThank you!",
-            "INFEST: Credentials Manager", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        new ChangePasswordDialog().run();
+    }
+    
+    protected void changePassword(com.jogjadamai.infest.administrator.ChangePasswordDialog changePasswordDialog) {
+        if(isCredentialsCurrent(changePasswordDialog, new com.jogjadamai.infest.communication.Credentials("infestadmin", changePasswordDialog.currentPasswordField.getPassword()))) {
+            try {
+                String salt = getSalt();
+                com.jogjadamai.infest.communication.Credentials newCredentials = new com.jogjadamai.infest.communication.Credentials("infestadmin", changePasswordDialog.newPasswordField.getPassword());
+                try {
+                    newCredentials.encrpyt(salt);
+                    java.io.File credFile = new java.io.File("administrator.crd");
+                    try {
+                        credFile.createNewFile();
+                        java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
+                        java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
+                        oos.writeObject(newCredentials);
+                        javax.swing.JOptionPane.showMessageDialog(changePasswordDialog,
+                                "New Administrator Credentials has been saved!",
+                                "INFEST: Credentials Manager", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+                        changePasswordDialog.setVisible(false);
+                    } catch (java.io.IOException ex) {
+                        System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+                        javax.swing.JOptionPane.showMessageDialog(changePasswordDialog,
+                                "Failed to set new credentials!\n\n"
+                                        + "The program is unable to create new credentials file.\n"
+                                        + "The file probably is under used by another proccess.",
+                                "INFEST: Credentials Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+                    javax.swing.JOptionPane.showMessageDialog(changePasswordDialog,
+                            "Failed to encrypt credentials!\n\n"
+                                    + "Please contact Infest Developer Team for further help.",
+                            "INFEST: Encryption System", javax.swing.JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (NullPointerException ex) {
+                System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+                javax.swing.JOptionPane.showMessageDialog(changePasswordDialog, 
+                        "Infest Configuration File is miss-configured!\n\n"
+                        + "Please verify that the Infest Configuration File (infest.conf) is exist in the current\n"
+                        + "working directory and is properly configured. Any wrong setting or modification of\n"
+                        + "Infest Configuration File would cause this error.", 
+                        "INFEST: Program Configuration Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+                fatalExit(-1);
+            }
+        } else {
+            javax.swing.JOptionPane.showMessageDialog(changePasswordDialog, 
+                    "Authentication failed!\n\n"
+                        + "Either current password is wrong, or your\n"
+                        + "Infest Configuration File is miss-configured.",
+                    "INFEST: Authentication System", javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     protected void setOperatorCredentials() {
-        javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
-            "Credential Manager features are not yet available. Please check on further release.\n\nThank you!",
-            "INFEST: Credentials Manager", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        new OperatorCredentialsDialog().run();
+    }
+    
+    protected void setOperatorCredentials(com.jogjadamai.infest.administrator.OperatorCredentialsDialog operatorCredentialsDialog) {
+        createOperatorCredential(operatorCredentialsDialog.usernameField.getText(), operatorCredentialsDialog.newPasswordField.getPassword());
     }
     
     protected void resetOperatorCredentials() {
@@ -286,58 +384,66 @@ public class Administrator {
                 "INFEST: Credentials Manager", 
                 javax.swing.JOptionPane.YES_NO_OPTION, 
                 javax.swing.JOptionPane.QUESTION_MESSAGE) == javax.swing.JOptionPane.YES_OPTION){
-            createDefaultOperatorCredential();
+            createOperatorCredential();
         }
     }
     
-    private String getSalt() {
-        com.jogjadamai.infest.service.ProgramPropertiesManager ppm = com.jogjadamai.infest.service.ProgramPropertiesManager.getInstance();
+    private String getSalt() throws NullPointerException {
         String salt;
         try {
-            salt = ppm.getProperty("salt");
-        } catch(NullPointerException npe) {
-            java.security.SecureRandom secureRandom;
-            byte[] saltBytes = new byte[32];
-            try {
-                secureRandom = java.security.SecureRandom.getInstance("SHA1PRNG");
-                secureRandom.nextBytes(saltBytes);
-            } catch (java.security.NoSuchAlgorithmException ex) {
-                secureRandom = new java.security.SecureRandom();
-                secureRandom.nextBytes(saltBytes);
-                System.err.println("[INFEST] " + ex);
-            } finally {
-                salt = java.util.Base64.getEncoder().encodeToString(saltBytes);
-                ppm.setProperty("salt", salt);
-            }
+            salt = programPropertiesManager.getProperty("salt");
+            if(salt.isEmpty()) throw new NullPointerException();
+        } catch(NullPointerException ex) {
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            salt = "";
+            throw ex;
         }
         return salt;
     }
     
-    private void createDefaultOperatorCredential() {
-        String user = "infestoperator";
-        char[] pass = {
+    private void createOperatorCredential() {
+        createOperatorCredential(null, null);
+    }
+    
+    private void createOperatorCredential(String username, char[] password) {
+        String defaultUsername = "infestoperator";
+        char[] defaultPassword = {
             'o', 'p', 'e', 'r', 'a', 't', 'o', 'r', 'i', 'n', 'f', 'e', 's', 't'
         };
-        com.jogjadamai.infest.communication.Credentials credential = new com.jogjadamai.infest.communication.Credentials(user, pass);
+        if(username == null) username = defaultUsername;
+        if(password == null) password = defaultPassword;
         try {
-            credential.encrpyt(getSalt());
-            java.io.File credFile = new java.io.File("operator.crd");
+            String salt = getSalt();
+            com.jogjadamai.infest.communication.Credentials credential = new com.jogjadamai.infest.communication.Credentials(username, password);
             try {
-                credFile.createNewFile();
-                java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
-                java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
-                oos.writeObject(credential);
-            } catch (java.io.IOException ex) {
-                System.err.println("[INFEST] " + ex);
+                credential.encrpyt(salt);
+                java.io.File credFile = new java.io.File("operator.crd");
+                try {
+                    credFile.createNewFile();
+                    java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
+                    java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
+                    oos.writeObject(credential);
+                } catch (java.io.IOException ex) {
+                    System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+                    javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
+                            "Failed to create credentials file.",
+                            "INFEST: Credentials Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception ex) {
+                System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
                 javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
-                        "Failed to create credentials file.",
-                        "INFEST: Credentials Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+                        "Failed to encrypt credentials.",
+                        "INFEST: Encryption System", javax.swing.JOptionPane.ERROR_MESSAGE);
             }
-        } catch (Exception ex) {
-            System.err.println("[INFEST] " + ex);
+        } catch (NullPointerException ex) {
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
             javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
-                    "Failed to encrypt credentials.",
-                    "INFEST: Encryption System", javax.swing.JOptionPane.ERROR_MESSAGE);
+                    "Infest Configuration File is miss-configured!\n\n"
+                            + "Please verify that the Infest Configuration File (infest.conf) is exist in the current\n"
+                            + "working directory and is properly configured. Any wrong setting or modification of\n"
+                            + "Infest Configuration File would cause this error.", 
+                    "INFEST: Program Configuration Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+            fatalExit(-1);
         }
     }
     

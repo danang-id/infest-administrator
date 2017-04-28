@@ -28,27 +28,19 @@ import com.jogjadamai.infest.service.ProgramPropertiesManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.InvalidParameterSpecException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
@@ -1003,19 +995,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         try {
             salt = programPropertiesManager.getProperty("salt");
         } catch(NullPointerException npe) {
-            SecureRandom secureRandom;
-            byte[] saltBytes = new byte[32];
-            try {
-                secureRandom = SecureRandom.getInstance("SHA1PRNG");
-                secureRandom.nextBytes(saltBytes);
-            } catch (NoSuchAlgorithmException ex) {
-                secureRandom = new SecureRandom();
-                secureRandom.nextBytes(saltBytes);
-                System.err.println("[INFEST] " + ex);
-            } finally {
-                salt = Base64.getEncoder().encodeToString(saltBytes);
-                programPropertiesManager.setProperty("salt", salt);
-            }
+            salt = "";
         }
         return salt;
     }
@@ -1026,8 +1006,10 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
             'a', 'd', 'm', 'i', 'n', 'i', 'n', 'f', 'e', 's', 't'
         };
         com.jogjadamai.infest.communication.Credentials credential = new com.jogjadamai.infest.communication.Credentials(user, pass);
+        String salt = getSalt();
+        if(salt.length() == 0) return null;
         try {
-            credential.encrpyt(getSalt());
+            credential.encrpyt(salt);
             java.io.File credFile = new java.io.File("administrator.crd");
             try {
                 credFile.createNewFile();
@@ -1049,8 +1031,10 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
             'o', 'p', 'e', 'r', 'a', 't', 'o', 'r', 'i', 'n', 'f', 'e', 's', 't'
         };
         com.jogjadamai.infest.communication.Credentials credential = new com.jogjadamai.infest.communication.Credentials(user, pass);
+        String salt = getSalt();
+        if(salt.length() == 0) return null;
         try {
-            credential.encrpyt(getSalt());
+            credential.encrpyt(salt);
             java.io.File credFile = new java.io.File("operator.crd");
             try {
                 credFile.createNewFile();
