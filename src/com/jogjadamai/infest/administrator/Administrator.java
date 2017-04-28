@@ -55,6 +55,13 @@ public final class Administrator {
         return INSTANCE;
     }
     
+    protected static Administrator getInstance(com.jogjadamai.infest.administrator.SignInGUI signInFrame, com.jogjadamai.infest.administrator.MainGUI mainFrame) {
+        if(INSTANCE == null) INSTANCE = new Administrator();
+        INSTANCE.setSignInFrame(signInFrame);
+        INSTANCE.setMainFrame(mainFrame);
+        return INSTANCE;
+    }
+    
     private void initialiseConnection() {
         String serverAddress = null;
         try {
