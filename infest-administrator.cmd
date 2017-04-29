@@ -10,14 +10,7 @@ if not .%errorlevel%.==.0. (
 )
 
 :startProgram
-echo Starting program...
-echo  -------------------------------------------------------------------------
-echo  [                                                                       ]
-echo  [                     INFEST ADMINISTRATOR CONSOLE                      ] 
-echo  [                                                                       ]
-echo  -------------------------------------------------------------------------
-javaw -jar "store\Infest-Administrator.jar"
-pause
+start /B javaw -jar "D:\Documents\NetBeansProjects\Infest-Administrator\store\Infest-Administrator.jar"
 exit
 
 :startService

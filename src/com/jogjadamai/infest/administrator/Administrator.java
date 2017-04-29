@@ -334,10 +334,10 @@ public final class Administrator {
                 try {
                     newCredentials.encrpyt(salt);
                     java.io.File credFile = new java.io.File("administrator.crd");
+                    credFile.createNewFile();
+                    java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
+                    java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
                     try {
-                        credFile.createNewFile();
-                        java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
-                        java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
                         oos.writeObject(newCredentials);
                         javax.swing.JOptionPane.showMessageDialog(changePasswordDialog,
                                 "New Administrator Credentials has been saved!",
@@ -350,6 +350,13 @@ public final class Administrator {
                                         + "The program is unable to create new credentials file.\n"
                                         + "The file probably is under used by another proccess.",
                                 "INFEST: Credentials Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+                    } finally {
+                        try {
+                            fos.close();
+                            oos.close();
+                        } catch (java.io.IOException ex) {
+                            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+                        }
                     }
                 } catch (Exception ex) {
                     System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
@@ -382,7 +389,14 @@ public final class Administrator {
     }
     
     protected void setOperatorCredentials(com.jogjadamai.infest.administrator.OperatorCredentialsDialog operatorCredentialsDialog) {
-        createOperatorCredential(operatorCredentialsDialog.usernameField.getText(), operatorCredentialsDialog.newPasswordField.getPassword());
+        if(createOperatorCredential(operatorCredentialsDialog.usernameField.getText(), operatorCredentialsDialog.newPasswordField.getPassword())) {
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+                    "New Operator Credentials has been successfully set!",
+                    "INFEST: Credentials Manager", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+            operatorCredentialsDialog.setVisible(false);
+        } else javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
+                "Failed to set new Operator Credentials!",
+                "INFEST: Credentials Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
     }
     
     protected void resetOperatorCredentials() {
@@ -391,7 +405,12 @@ public final class Administrator {
                 "INFEST: Credentials Manager", 
                 javax.swing.JOptionPane.YES_NO_OPTION, 
                 javax.swing.JOptionPane.QUESTION_MESSAGE) == javax.swing.JOptionPane.YES_OPTION){
-            createOperatorCredential();
+            if(createOperatorCredential()) javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+                    "Operator Credentials has been successfully reset!",
+                    "INFEST: Credentials Manager", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+            else javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+                    "Failed to reset Operator Credentials!",
+                    "INFEST: Credentials Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
         }
     }
     
@@ -408,11 +427,12 @@ public final class Administrator {
         return salt;
     }
     
-    private void createOperatorCredential() {
-        createOperatorCredential(null, null);
+    private Boolean createOperatorCredential() {
+        return createOperatorCredential(null, null);
     }
     
-    private void createOperatorCredential(String username, char[] password) {
+    private Boolean createOperatorCredential(String username, char[] password) {
+        Boolean isSuccess = false;
         String defaultUsername = "infestoperator";
         char[] defaultPassword = {
             'o', 'p', 'e', 'r', 'a', 't', 'o', 'r', 'i', 'n', 'f', 'e', 's', 't'
@@ -425,16 +445,24 @@ public final class Administrator {
             try {
                 credential.encrpyt(salt);
                 java.io.File credFile = new java.io.File("operator.crd");
+                credFile.createNewFile();
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
+                java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
                 try {
-                    credFile.createNewFile();
-                    java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
-                    java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
                     oos.writeObject(credential);
                 } catch (java.io.IOException ex) {
                     System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
                     javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
                             "Failed to create credentials file.",
                             "INFEST: Credentials Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    try {
+                        fos.close();
+                        oos.close();
+                        isSuccess = true;
+                    } catch (java.io.IOException ex) {
+                        System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+                    }
                 }
             } catch (Exception ex) {
                 System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
@@ -452,6 +480,7 @@ public final class Administrator {
                     "INFEST: Program Configuration Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
             fatalExit(-1);
         }
+        return isSuccess;
     }
     
 }
