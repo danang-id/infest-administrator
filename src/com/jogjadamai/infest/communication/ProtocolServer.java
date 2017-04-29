@@ -24,12 +24,16 @@ import com.jogjadamai.infest.entity.Tables;
 import com.jogjadamai.infest.persistence.InfestEntityController;
 import com.jogjadamai.infest.persistence.InfestPersistence;
 import com.jogjadamai.infest.persistence.exceptions.NonexistentEntityException;
+import com.jogjadamai.infest.security.Credentials;
+import com.jogjadamai.infest.security.CredentialsManager;
 import com.jogjadamai.infest.service.ProgramPropertiesManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -994,55 +998,39 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         String salt;
         try {
             salt = programPropertiesManager.getProperty("salt");
-        } catch(NullPointerException npe) {
+            if(salt.isEmpty()) throw new NullPointerException();
+        } catch(NullPointerException ex) {
+            System.err.println("[INFEST] " + ex);
             salt = "";
+            throw ex;
         }
         return salt;
     }
     
-    private Credentials createDefaultAdministratorCredential() {
-        String user = "infestadmin";
-        char[] pass = {
-            'a', 'd', 'm', 'i', 'n', 'i', 'n', 'f', 'e', 's', 't'
-        };
-        com.jogjadamai.infest.communication.Credentials credential = new com.jogjadamai.infest.communication.Credentials(user, pass);
-        String salt = getSalt();
-        if(salt.length() == 0) return null;
+    private Credentials createDefaultCredentials(IProtocolClient client) {
+        Credentials credential = null;
+        String salt = null;
         try {
-            credential.encrpyt(salt);
-            java.io.File credFile = new java.io.File("administrator.crd");
-            try {
-                credFile.createNewFile();
-                java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
-                java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
-                oos.writeObject(credential);
-            } catch (java.io.IOException ex) {
-                System.err.println("[INFEST] " + ex);
-            }
-        } catch (Exception ex) {
-            System.err.println("[INFEST] " + ex);
+            salt = getSalt();
+        } catch (NullPointerException e) {
+            return null;
         }
-        return credential;
-    }
-    
-    private Credentials createDefaultOperatorCredential() {
-        String user = "infestoperator";
-        char[] pass = {
-            'o', 'p', 'e', 'r', 'a', 't', 'o', 'r', 'i', 'n', 'f', 'e', 's', 't'
-        };
-        com.jogjadamai.infest.communication.Credentials credential = new com.jogjadamai.infest.communication.Credentials(user, pass);
-        String salt = getSalt();
         if(salt.length() == 0) return null;
         try {
-            credential.encrpyt(salt);
-            java.io.File credFile = new java.io.File("operator.crd");
-            try {
-                credFile.createNewFile();
-                java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
-                java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
+            credential = CredentialsManager.createDefaultEncryptedCredentials(client.getType(), salt);
+            File credFile = new java.io.File(client.getType().name() + ".CRD");
+            credFile.createNewFile();
+            FileOutputStream fos = new FileOutputStream(credFile, false);
+            try (ObjectOutputStream oos = new ObjectOutputStream(fos)) {
                 oos.writeObject(credential);
-            } catch (java.io.IOException ex) {
+            } catch (IOException ex) {
                 System.err.println("[INFEST] " + ex);
+            } finally {
+                try {
+                    fos.close();
+                } catch (IOException ex) {
+                    System.err.println("[INFEST] " + ex);
+                }
             }
         } catch (Exception ex) {
             System.err.println("[INFEST] " + ex);
@@ -1066,52 +1054,42 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
     @Override
     public Credentials getCredentials(IProtocolClient client) throws java.rmi.RemoteException{
         Credentials credential;
-        File credFile;
         if(client.equals(CLIENT_LIST.get(client.getClientSession()))) {
-            entityController = InfestPersistence.getControllerInstance(InfestPersistence.Entity.TABLES);
-            switch(client.getType()) {
-                case ADMINISTRATOR:
-                    setStatus("getCredential(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
-                    credFile = new File("administrator.crd");
-                    if(credFile.exists() && !credFile.isDirectory()) {
+            setStatus("getCredential(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
+            File credFile = new File(client.getType().name() + ".CRD");
+            if(credFile.exists() && !credFile.isDirectory()) {
+                FileInputStream fis;
+                try {
+                    fis = new FileInputStream(credFile);
+                    ObjectInputStream ois = new ObjectInputStream(fis);
+                    try {
+                        credential = (Credentials) ois.readObject();
+                    } catch (ClassNotFoundException ex) {
+                        System.err.println("[INFEST] " + ex);
+                        credential = null;
+                    } finally {
                         try {
-                            FileInputStream fis = new FileInputStream(credFile);
-                            ObjectInputStream ois = new ObjectInputStream(fis);
-                            credential = (Credentials) ois.readObject();
-                        } catch (FileNotFoundException ex) {
-                            credential = createDefaultAdministratorCredential();
+                            ois.close();
+                        } catch (IOException ex) {
                             System.err.println("[INFEST] " + ex);
-                        } catch (IOException | ClassNotFoundException ex) {
-                            credential = null;
-                            System.err.println("[INFEST] " + ex);
+                            credential = createDefaultCredentials(client);
                         }
-                    } else {
-                        credential = createDefaultAdministratorCredential();
                     }
-                    break;
-                case OPERATOR:
-                    setStatus("getCredential(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
-                    credFile = new File("operator.crd");
-                    if(credFile.exists() && !credFile.isDirectory()) {
-                        try {
-                            FileInputStream fis = new FileInputStream(credFile);
-                            ObjectInputStream ois = new ObjectInputStream(fis);
-                            credential = (Credentials) ois.readObject();
-                        } catch (FileNotFoundException ex) {
-                            credential = createDefaultOperatorCredential();
-                            System.err.println("[INFEST] " + ex);
-                        } catch (IOException | ClassNotFoundException ex) {
-                            credential = null;
-                            System.err.println("[INFEST] " + ex);
-                        }
-                    } else {
-                        credential = createDefaultOperatorCredential();
+                    try {
+                        fis.close();
+                    } catch (IOException ex) {
+                        System.err.println("[INFEST] " + ex);
+                        credential = createDefaultCredentials(client);
                     }
-                    break;
-                default:
-                    setStatus("getCredential(): Server denied request from a/an " + client.getType().name() + " client. This client type IS NOT PERMITTED to request this method.");
-                    credential = null;
-                    break;
+                } catch (FileNotFoundException ex) {
+                    System.err.println("[INFEST] " + ex);
+                    credential = createDefaultCredentials(client);
+                } catch (IOException ex) {
+                    System.err.println("[INFEST] " + ex);
+                    credential = createDefaultCredentials(client);
+                }
+            } else {
+                credential = createDefaultCredentials(client);
             }
         } else {
             setStatus("getCredential(): Server denied request from an UN-AUTHENTICATED " + client.getType().name() + " client.");

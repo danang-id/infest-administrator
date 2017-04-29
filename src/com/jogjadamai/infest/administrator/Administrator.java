@@ -15,6 +15,7 @@
  */
 package com.jogjadamai.infest.administrator;
 
+
 /**
  * <h1>class <code>Administrator</code></h1>
  * <p><code>Administrator</code> is a controller class containing all the business
@@ -110,12 +111,12 @@ public final class Administrator {
         this.mainFrame = mainFrame;
     }
     
-    private Boolean isCredentialsCurrent(java.awt.Component parent, com.jogjadamai.infest.communication.Credentials credentials) {
-        com.jogjadamai.infest.communication.Credentials savedCred = null;
+    private Boolean isCredentialsCurrent(java.awt.Component parent, com.jogjadamai.infest.security.Credentials credentials) {
+        com.jogjadamai.infest.security.Credentials savedCred = null;
         try {    
             savedCred = this.protocolServer.getCredentials(protocolClient);
             if(savedCred == null) {
-                savedCred = new com.jogjadamai.infest.communication.Credentials("", new char[0]);
+                savedCred = com.jogjadamai.infest.security.CredentialsManager.createCredentials("", "");
                 System.err.println("[INFEST] " +  getNowTime() + ": " + "java.lang.NullPointerException");
                 javax.swing.JOptionPane.showMessageDialog(parent, 
                         "Infest Configuration File is miss-configured!\n\n"
@@ -128,13 +129,13 @@ public final class Administrator {
             try {
                 String salt = getSalt();
                 try {
-                    credentials.encrpyt(salt);
+                    com.jogjadamai.infest.security.CredentialsManager.encryptCredentials(credentials, salt);
                     return savedCred.equals(credentials);
                 } catch (Exception ex) {
                     System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
                     javax.swing.JOptionPane.showMessageDialog(parent,
                             "Failed to encrypt credentials!\n\n"
-                            + "Please contact an Infest Administrator for furhter help.", 
+                            + "Please contact an Infest Administrator for further help.", 
                             "INFEST: Encryption Service", javax.swing.JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
@@ -150,7 +151,7 @@ public final class Administrator {
                 return false;
             }
         } catch (java.rmi.RemoteException ex) {
-            savedCred = new com.jogjadamai.infest.communication.Credentials("", new char[0]);
+            savedCred = com.jogjadamai.infest.security.CredentialsManager.createCredentials("", "");
             System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
             javax.swing.JOptionPane.showMessageDialog(parent, 
                     "There's is an error with Infest API Server! Please contact Infest Developer Team.\n\n"
@@ -162,7 +163,7 @@ public final class Administrator {
     }
     
     protected void signIn() {
-        if(isCredentialsCurrent((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, new com.jogjadamai.infest.communication.Credentials(signInFrame.usernameField.getText(), signInFrame.passwordField.getPassword()))) {
+        if(isCredentialsCurrent((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, com.jogjadamai.infest.security.CredentialsManager.createCredentials(signInFrame.usernameField.getText(), signInFrame.passwordField.getPassword()))) {
             signInFrame.setVisible(false);
             mainFrame.setVisible(true);
             activeFrame = ViewFrame.MAIN;
@@ -327,17 +328,15 @@ public final class Administrator {
     }
     
     protected void changePassword(com.jogjadamai.infest.administrator.ChangePasswordDialog changePasswordDialog) {
-        if(isCredentialsCurrent(changePasswordDialog, new com.jogjadamai.infest.communication.Credentials("infestadmin", changePasswordDialog.currentPasswordField.getPassword()))) {
+        if(isCredentialsCurrent(changePasswordDialog, com.jogjadamai.infest.security.CredentialsManager.createCredentials("infestadmin", changePasswordDialog.currentPasswordField.getPassword()))) {
             try {
                 String salt = getSalt();
-                com.jogjadamai.infest.communication.Credentials newCredentials = new com.jogjadamai.infest.communication.Credentials("infestadmin", changePasswordDialog.newPasswordField.getPassword());
                 try {
-                    newCredentials.encrpyt(salt);
-                    java.io.File credFile = new java.io.File("administrator.crd");
+                    com.jogjadamai.infest.security.Credentials newCredentials = com.jogjadamai.infest.security.CredentialsManager.createEncryptedCredentials("infestadmin", changePasswordDialog.newPasswordField.getPassword(), salt);
+                    java.io.File credFile = new java.io.File(com.jogjadamai.infest.communication.IProtocolClient.Type.OPERATOR.name() + ".CRD");
                     credFile.createNewFile();
                     java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
-                    java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
-                    try {
+                    try (java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos)) {
                         oos.writeObject(newCredentials);
                         javax.swing.JOptionPane.showMessageDialog(changePasswordDialog,
                                 "New Administrator Credentials has been saved!",
@@ -353,7 +352,6 @@ public final class Administrator {
                     } finally {
                         try {
                             fos.close();
-                            oos.close();
                         } catch (java.io.IOException ex) {
                             System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
                         }
@@ -433,35 +431,24 @@ public final class Administrator {
     
     private Boolean createOperatorCredential(String username, char[] password) {
         Boolean isSuccess = false;
-        String defaultUsername = "infestoperator";
-        char[] defaultPassword = {
-            'o', 'p', 'e', 'r', 'a', 't', 'o', 'r', 'i', 'n', 'f', 'e', 's', 't'
-        };
-        if(username == null) username = defaultUsername;
-        if(password == null) password = defaultPassword;
         try {
             String salt = getSalt();
-            com.jogjadamai.infest.communication.Credentials credential = new com.jogjadamai.infest.communication.Credentials(username, password);
+            com.jogjadamai.infest.security.Credentials credentials;
             try {
-                credential.encrpyt(salt);
-                java.io.File credFile = new java.io.File("operator.crd");
+                if(username == null || password == null) credentials = com.jogjadamai.infest.security.CredentialsManager.createDefaultEncryptedCredentials(com.jogjadamai.infest.communication.IProtocolClient.Type.OPERATOR, salt);
+                else credentials = com.jogjadamai.infest.security.CredentialsManager.createEncryptedCredentials(username, password, salt);
+                java.io.File credFile = new java.io.File(com.jogjadamai.infest.communication.IProtocolClient.Type.OPERATOR.name() + ".CRD");
                 credFile.createNewFile();
                 java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
-                java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos);
-                try {
-                    oos.writeObject(credential);
+                try (java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos)) {
+                    oos.writeObject(credentials);
                 } catch (java.io.IOException ex) {
-                    System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
-                    javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
-                            "Failed to create credentials file.",
-                            "INFEST: Credentials Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+                    System.err.println("[INFEST] " + ex);
                 } finally {
                     try {
                         fos.close();
-                        oos.close();
-                        isSuccess = true;
                     } catch (java.io.IOException ex) {
-                        System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+                        System.err.println("[INFEST] " + ex);
                     }
                 }
             } catch (Exception ex) {
