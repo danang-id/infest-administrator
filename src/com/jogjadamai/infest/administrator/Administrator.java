@@ -30,8 +30,9 @@ public final class Administrator {
     
     private static Administrator INSTANCE;
     
-    private com.jogjadamai.infest.administrator.SignInGUI signInFrame;
-    private com.jogjadamai.infest.administrator.MainGUI mainFrame;
+    private final com.jogjadamai.infest.administrator.SignInGUI signInFrame;
+    private final com.jogjadamai.infest.administrator.MainGUI mainFrame;
+    
     private ViewFrame activeFrame;
     private java.util.List<javax.swing.JCheckBox> featuresCheckBox;
     private java.util.List<com.jogjadamai.infest.entity.Features> features;
@@ -39,28 +40,46 @@ public final class Administrator {
     private com.jogjadamai.infest.communication.IProtocolClient protocolClient;
     private com.jogjadamai.infest.communication.IProtocolServer protocolServer;
     
-    private final com.jogjadamai.infest.service.ProgramPropertiesManager programPropertiesManager;
+    private com.jogjadamai.infest.service.ProgramPropertiesManager programPropertiesManager;
     
     private enum ViewFrame {
         SIGN_IN, MAIN
     }
     
-    private Administrator() {
-        programPropertiesManager = com.jogjadamai.infest.service.ProgramPropertiesManager.getInstance();
-        initialiseConnection();
+    private Administrator(com.jogjadamai.infest.administrator.SignInGUI signInFrame, com.jogjadamai.infest.administrator.MainGUI mainFrame) {
+        this.signInFrame = signInFrame;
+        this.mainFrame = mainFrame;
         this.activeFrame = ViewFrame.SIGN_IN;
     }
     
     protected static Administrator getInstance() {
-        if(INSTANCE == null) INSTANCE = new Administrator();
         return INSTANCE;
     }
     
-    protected static Administrator getInstance(com.jogjadamai.infest.administrator.SignInGUI signInFrame, com.jogjadamai.infest.administrator.MainGUI mainFrame) {
-        if(INSTANCE == null) INSTANCE = new Administrator();
-        INSTANCE.setSignInFrame(signInFrame);
-        INSTANCE.setMainFrame(mainFrame);
+    protected static Administrator createInstance(com.jogjadamai.infest.administrator.SignInGUI signInFrame, com.jogjadamai.infest.administrator.MainGUI mainFrame) {
+        if(INSTANCE == null) INSTANCE = new Administrator(signInFrame, mainFrame);
         return INSTANCE;
+    }
+    
+    protected void onFirstRun() {
+        java.io.File configFile = new java.io.File("infest.conf");
+        java.io.File aCredFile = new java.io.File(com.jogjadamai.infest.communication.IProtocolClient.Type.ADMINISTRATOR.name() + ".CRD");
+        java.io.File oCredFile = new java.io.File(com.jogjadamai.infest.communication.IProtocolClient.Type.OPERATOR.name() + ".CRD");
+        java.io.File cCredFile = new java.io.File(com.jogjadamai.infest.communication.IProtocolClient.Type.CUSTOMER.name() + ".CRD");
+        if (!configFile.exists() && !aCredFile.exists() && !oCredFile.exists() && !cCredFile.exists()) {
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame,
+                    "Hi, welcome to Infest Program!\n"
+                            + "\n"
+                            + "We believe that it is your first time running this application.\n"
+                            + "Before proceeding, please fill something for us :)", 
+                    "INFEST: Program Configuration Manager", 
+                    javax.swing.JOptionPane.INFORMATION_MESSAGE);
+            new com.jogjadamai.infest.administrator.FirstTimeConfiguration().setVisible(true);
+        } else {
+            programPropertiesManager = com.jogjadamai.infest.service.ProgramPropertiesManager.getInstance();
+            initialiseConnection();
+            signInFrame.setVisible(true);
+        }
     }
     
     private void initialiseConnection() {
@@ -103,12 +122,32 @@ public final class Administrator {
         return java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(java.time.LocalDateTime.now());
     }
     
-    protected void setSignInFrame(com.jogjadamai.infest.administrator.SignInGUI signInFrame) {
-        this.signInFrame = signInFrame;
-    }
-    
-    protected void setMainFrame(com.jogjadamai.infest.administrator.MainGUI mainFrame) {
-        this.mainFrame = mainFrame;
+    protected String getCurrentAdministratorUsername(java.awt.Component parent) {
+        com.jogjadamai.infest.security.Credentials savedCred = null;
+        try {
+            savedCred = this.protocolServer.getCredentials(protocolClient);
+            if(savedCred == null) {
+                savedCred = com.jogjadamai.infest.security.CredentialsManager.createCredentials("", "");
+                System.err.println("[INFEST] " +  getNowTime() + ": " + "java.lang.NullPointerException");
+                javax.swing.JOptionPane.showMessageDialog(parent,
+                        "Infest Configuration File is miss-configured!\n\n"
+                                + "Please verify that the Infest Configuration File (infest.conf) is exist in the current\n"
+                                + "working directory and is properly configured. Any wrong setting or modification of\n"
+                                + "Infest Configuration File would cause this error.",
+                        "INFEST: Program Configuration Manager", javax.swing.JOptionPane.ERROR_MESSAGE);
+                fatalExit(-1);
+            }
+            return savedCred.getUsername();
+        } catch (java.rmi.RemoteException ex) {
+            savedCred = com.jogjadamai.infest.security.CredentialsManager.createCredentials("", "");
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            javax.swing.JOptionPane.showMessageDialog(parent, 
+                    "There's is an error with Infest API Server! Please contact Infest Developer Team.\n\n"
+                            + "Program error detected.", 
+                    "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            fatalExit(-1);
+            return null;
+        }
     }
     
     private Boolean isCredentialsCurrent(java.awt.Component parent, com.jogjadamai.infest.security.Credentials credentials) {
@@ -177,8 +216,18 @@ public final class Administrator {
     }
     
     protected void signOut() {
+        try {
+            if(com.jogjadamai.infest.communication.ProtocolServer.getInstance().isServerActive())
+                toggleServer();
+        } catch (java.rmi.RemoteException ex) {
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+            javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+                    "There's is an error with Infest API Server! Please contact Infest Developer Team.\n\n"
+                            + "Program error detected.", 
+                    "INFEST: Remote Connection Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            fatalExit(-1);
+        }
         mainFrame.setVisible(false);
-        signInFrame.usernameField.setText("");
         signInFrame.usernameField.requestFocusInWindow();
         signInFrame.passwordField.setText("");
         signInFrame.setVisible(true);
@@ -328,12 +377,12 @@ public final class Administrator {
     }
     
     protected void changePassword(com.jogjadamai.infest.administrator.ChangePasswordDialog changePasswordDialog) {
-        if(isCredentialsCurrent(changePasswordDialog, com.jogjadamai.infest.security.CredentialsManager.createCredentials("infestadmin", changePasswordDialog.currentPasswordField.getPassword()))) {
+        if(isCredentialsCurrent(changePasswordDialog, com.jogjadamai.infest.security.CredentialsManager.createCredentials(getCurrentAdministratorUsername((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame), changePasswordDialog.currentPasswordField.getPassword()))) {
             try {
                 String salt = getSalt();
                 try {
-                    com.jogjadamai.infest.security.Credentials newCredentials = com.jogjadamai.infest.security.CredentialsManager.createEncryptedCredentials("infestadmin", changePasswordDialog.newPasswordField.getPassword(), salt);
-                    java.io.File credFile = new java.io.File(com.jogjadamai.infest.communication.IProtocolClient.Type.OPERATOR.name() + ".CRD");
+                    com.jogjadamai.infest.security.Credentials newCredentials = com.jogjadamai.infest.security.CredentialsManager.createEncryptedCredentials(getCurrentAdministratorUsername((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame), changePasswordDialog.newPasswordField.getPassword(), salt);
+                    java.io.File credFile = new java.io.File(com.jogjadamai.infest.communication.IProtocolClient.Type.ADMINISTRATOR.name().toLowerCase() + ".crd");
                     credFile.createNewFile();
                     java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
                     try (java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos)) {
@@ -375,7 +424,7 @@ public final class Administrator {
             }
         } else {
             javax.swing.JOptionPane.showMessageDialog(changePasswordDialog, 
-                    "Authentication failed!\n\n"
+                    "Authentication Failed!\n\n"
                         + "Either current password is wrong, or your\n"
                         + "Infest Configuration File is miss-configured.",
                     "INFEST: Authentication System", javax.swing.JOptionPane.ERROR_MESSAGE);
@@ -387,7 +436,9 @@ public final class Administrator {
     }
     
     protected void setOperatorCredentials(com.jogjadamai.infest.administrator.OperatorCredentialsDialog operatorCredentialsDialog) {
-        if(createOperatorCredential(operatorCredentialsDialog.usernameField.getText(), operatorCredentialsDialog.newPasswordField.getPassword())) {
+        if(createCredentials(com.jogjadamai.infest.communication.IProtocolClient.Type.OPERATOR,
+                operatorCredentialsDialog.usernameField.getText(), 
+                operatorCredentialsDialog.newPasswordField.getPassword())) {
             javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
                     "New Operator Credentials has been successfully set!",
                     "INFEST: Credentials Manager", javax.swing.JOptionPane.INFORMATION_MESSAGE);
@@ -403,7 +454,7 @@ public final class Administrator {
                 "INFEST: Credentials Manager", 
                 javax.swing.JOptionPane.YES_NO_OPTION, 
                 javax.swing.JOptionPane.QUESTION_MESSAGE) == javax.swing.JOptionPane.YES_OPTION){
-            if(createOperatorCredential()) javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
+            if(createOperatorCredentials()) javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
                     "Operator Credentials has been successfully reset!",
                     "INFEST: Credentials Manager", javax.swing.JOptionPane.INFORMATION_MESSAGE);
             else javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
@@ -413,6 +464,7 @@ public final class Administrator {
     }
     
     private String getSalt() throws NullPointerException {
+        programPropertiesManager = com.jogjadamai.infest.service.ProgramPropertiesManager.getInstance();
         String salt;
         try {
             salt = programPropertiesManager.getProperty("salt");
@@ -425,19 +477,19 @@ public final class Administrator {
         return salt;
     }
     
-    private Boolean createOperatorCredential() {
-        return createOperatorCredential(null, null);
+    protected Boolean createOperatorCredentials() {
+        return createCredentials(com.jogjadamai.infest.communication.IProtocolClient.Type.OPERATOR, null, null);
     }
     
-    private Boolean createOperatorCredential(String username, char[] password) {
+    protected Boolean createCredentials(com.jogjadamai.infest.communication.IProtocolClient.Type clientType, String username, char[] password) {
         Boolean isSuccess = false;
         try {
             String salt = getSalt();
             com.jogjadamai.infest.security.Credentials credentials;
             try {
-                if(username == null || password == null) credentials = com.jogjadamai.infest.security.CredentialsManager.createDefaultEncryptedCredentials(com.jogjadamai.infest.communication.IProtocolClient.Type.OPERATOR, salt);
+                if(username == null || password == null) credentials = com.jogjadamai.infest.security.CredentialsManager.createDefaultEncryptedCredentials(clientType, salt);
                 else credentials = com.jogjadamai.infest.security.CredentialsManager.createEncryptedCredentials(username, password, salt);
-                java.io.File credFile = new java.io.File(com.jogjadamai.infest.communication.IProtocolClient.Type.OPERATOR.name() + ".CRD");
+                java.io.File credFile = new java.io.File(clientType.name().toLowerCase() + ".crd");
                 credFile.createNewFile();
                 java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
                 try (java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos)) {

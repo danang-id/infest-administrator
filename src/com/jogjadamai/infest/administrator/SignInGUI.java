@@ -255,7 +255,6 @@ public final class SignInGUI extends javax.swing.JFrame implements Runnable {
         administrator = Administrator.getInstance();
         getContentPane().setBackground(new java.awt.Color(0x651112));
         setLocationRelativeTo(null);
-        setVisible(true);
     }
     
 }

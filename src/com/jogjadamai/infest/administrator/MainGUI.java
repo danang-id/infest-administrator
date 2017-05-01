@@ -336,7 +336,7 @@ public final class MainGUI extends javax.swing.JFrame implements Runnable {
     }                                               
 
     private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {                                             
-        administrator.shutdown(1);
+        administrator.shutdown(0);
     }                                            
 
     private void seeDocumentationMenuItemActionPerformed(java.awt.event.ActionEvent evt) {                                                         

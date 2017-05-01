@@ -34,10 +34,19 @@ public final class Program {
     private static com.jogjadamai.infest.communication.IProtocolServer Server;
     
     public static void main(String[] args) throws java.rmi.RemoteException {
-        Program.Server = com.jogjadamai.infest.communication.ProtocolServer.getInstance();
         Program.SignInGUI = new SignInGUI();
         Program.MainGUI = new MainGUI();
-        Program.Controller = Administrator.getInstance(Program.SignInGUI, Program.MainGUI);
+        try {
+            Program.Server = com.jogjadamai.infest.communication.ProtocolServer.getInstance();
+        } catch(java.rmi.server.ExportException ex) {
+            javax.swing.JOptionPane.showMessageDialog(SignInGUI, 
+                    "Program already running! Only one instance allowed at a time.", 
+                    "INFEST: Administrator", 
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+            System.exit(0);
+        }
+        Program.Controller = Administrator.createInstance(Program.SignInGUI, Program.MainGUI);
+        Program.Controller.onFirstRun();
         Program.SignInThread = new Thread(Program.SignInGUI);
         Program.MainThread = new Thread(Program.MainGUI);
         java.awt.EventQueue.invokeLater(Program.SignInThread);

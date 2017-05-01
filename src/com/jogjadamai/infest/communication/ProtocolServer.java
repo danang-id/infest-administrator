@@ -1008,34 +1008,33 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
     }
     
     private Credentials createDefaultCredentials(IProtocolClient client) {
-        Credentials credential = null;
-        String salt = null;
+        Credentials credentials;
+        String salt;
         try {
             salt = getSalt();
-        } catch (NullPointerException e) {
+        } catch (NullPointerException ex) {
             return null;
         }
-        if(salt.length() == 0) return null;
         try {
-            credential = CredentialsManager.createDefaultEncryptedCredentials(client.getType(), salt);
-            File credFile = new java.io.File(client.getType().name() + ".CRD");
+            credentials = CredentialsManager.createDefaultEncryptedCredentials(client.getType(), salt);
+            File credFile = new java.io.File(client.getType().name().toLowerCase() + ".crd");
             credFile.createNewFile();
             FileOutputStream fos = new FileOutputStream(credFile, false);
             try (ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-                oos.writeObject(credential);
+                oos.writeObject(credentials);
             } catch (IOException ex) {
                 System.err.println("[INFEST] " + ex);
-            } finally {
-                try {
-                    fos.close();
-                } catch (IOException ex) {
-                    System.err.println("[INFEST] " + ex);
-                }
+            }
+            try {
+                fos.close();
+            } catch (IOException ex) {
+                System.err.println("[INFEST] " + ex);
             }
         } catch (Exception ex) {
+            credentials = null;
             System.err.println("[INFEST] " + ex);
         }
-        return credential;
+        return credentials;
     }
     
     /**
@@ -1056,7 +1055,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         Credentials credential;
         if(client.equals(CLIENT_LIST.get(client.getClientSession()))) {
             setStatus("getCredential(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
-            File credFile = new File(client.getType().name() + ".CRD");
+            File credFile = new File(client.getType().name().toLowerCase() + ".crd");
             if(credFile.exists() && !credFile.isDirectory()) {
                 FileInputStream fis;
                 try {
@@ -1067,15 +1066,9 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                     } catch (ClassNotFoundException ex) {
                         System.err.println("[INFEST] " + ex);
                         credential = null;
-                    } finally {
-                        try {
-                            ois.close();
-                        } catch (IOException ex) {
-                            System.err.println("[INFEST] " + ex);
-                            credential = createDefaultCredentials(client);
-                        }
-                    }
+                    } 
                     try {
+                        ois.close();
                         fis.close();
                     } catch (IOException ex) {
                         System.err.println("[INFEST] " + ex);
