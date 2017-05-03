@@ -10,7 +10,7 @@ if not .%errorlevel%.==.0. (
 )
 
 :startProgram
-start /B javaw -jar "D:\Documents\NetBeansProjects\Infest-Administrator\store\Infest-Administrator.jar"
+java -jar "D:\Documents\NetBeansProjects\Infest-Administrator\store\Infest-Administrator.jar"
 exit
 
 :startService

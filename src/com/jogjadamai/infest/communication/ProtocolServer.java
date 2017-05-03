@@ -266,6 +266,16 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                 case CUSTOMER:
                     setStatus("createOrder(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
                     entityController.create(order);
+                    Menus menu = order.getIdmenu();
+                    menu.setStock((order.getIdmenu().getStock()) - (order.getTotal()));
+                    entityController = InfestPersistence.getControllerInstance(InfestPersistence.Entity.MENUS);
+                    try {
+                        entityController.update(menu);
+                    } catch (NonexistentEntityException ex) {
+                        Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (Exception ex) {
+                        Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                     break;
                 default:
                     setStatus("createOrder(): UNAUTHORIZED client is requesting this method. Server denied the request.");
@@ -372,7 +382,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         if(isClientAuthenticated(client)) {
             entityController = InfestPersistence.getControllerInstance(InfestPersistence.Entity.CARTS);
             switch(client.getType()) {
-                case OPERATOR:
+                case CUSTOMER:
                     setStatus("readCart(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
                     cart = (Carts) entityController.read(id);
                     break;
@@ -583,6 +593,10 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
             entityController = InfestPersistence.getControllerInstance(InfestPersistence.Entity.CARTS);
             switch(client.getType()) {
                 case OPERATOR:
+                    setStatus("readAllCart(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
+                    carts = entityController.readAll();
+                    break;
+                case CUSTOMER:
                     setStatus("readAllCart(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
                     carts = entityController.readAll();
                     break;

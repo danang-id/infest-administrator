@@ -494,6 +494,7 @@ public final class Administrator {
                 java.io.FileOutputStream fos = new java.io.FileOutputStream(credFile, false);
                 try (java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(fos)) {
                     oos.writeObject(credentials);
+                    isSuccess = true;
                 } catch (java.io.IOException ex) {
                     System.err.println("[INFEST] " + ex);
                 } finally {

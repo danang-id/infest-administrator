@@ -49,6 +49,8 @@ public final class Program {
         Program.Controller.onFirstRun();
         Program.SignInThread = new Thread(Program.SignInGUI);
         Program.MainThread = new Thread(Program.MainGUI);
+        Program.SignInThread.setName("SignInThread");
+        Program.MainThread.setName("MainThread");
         java.awt.EventQueue.invokeLater(Program.SignInThread);
         java.awt.EventQueue.invokeLater(Program.MainThread);
     }
