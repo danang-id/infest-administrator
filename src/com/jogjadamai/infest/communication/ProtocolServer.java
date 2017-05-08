@@ -266,16 +266,15 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                 case CUSTOMER:
                     setStatus("createOrder(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
                     entityController.create(order);
-                    Menus menu = order.getIdmenu();
-                    menu.setStock((order.getIdmenu().getStock()) - (order.getTotal()));
-                    entityController = InfestPersistence.getControllerInstance(InfestPersistence.Entity.MENUS);
-                    try {
-                        entityController.update(menu);
-                    } catch (NonexistentEntityException ex) {
-                        Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (Exception ex) {
-                        Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+//                    Menus menu = order.getIdmenu();
+//                    menu.setStock((order.getIdmenu().getStock()) - (order.getTotal()));
+//                    try {
+//                        InfestPersistence.getControllerInstance(InfestPersistence.Entity.MENUS).update(menu);
+//                    } catch (NonexistentEntityException ex) {
+//                        Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, null, ex);
+//                    } catch (Exception ex) {
+//                        Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, null, ex);
+//                    }
                     break;
                 default:
                     setStatus("createOrder(): UNAUTHORIZED client is requesting this method. Server denied the request.");
@@ -764,6 +763,10 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                     setStatus("readAllTable(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
                     tables = entityController.readAll();
                     break;
+                case CUSTOMER:
+                    setStatus("readAllTable(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
+                    tables = entityController.readAll();
+                    break;
                 default:
                     setStatus("readAllTable(): Server denied request from a/an " + client.getType().name() + " client. This client type IS NOT PERMITTED to request this method.");
                     tables = null;
@@ -824,7 +827,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         return readFinanceReport(client, localDate, false);
     }
     
-    public List<FinanceReport> readFinanceReport(IProtocolClient client, LocalDate localDate, Boolean allDate) throws RemoteException {
+    private List<FinanceReport> readFinanceReport(IProtocolClient client, LocalDate localDate, Boolean allDate) throws RemoteException {
         List<FinanceReport> financeReport = new ArrayList<FinanceReport>();
         if(isClientAuthenticated(client)) {
             switch(client.getType()) {
@@ -1002,6 +1005,54 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
             }
         } else {
             setStatus("updateTable(): Server denied request from an UN-AUTHENTICATED " + client.getType().name() + " client.");
+            isSuccess = false;
+        }
+        return isSuccess;
+    }
+    
+    /**
+     * <h2>method <code>updateCart()</code></h2>
+     * <p>Method <code>updateCart</code> is used to update <code>Carts</code> 
+     * entity based on the <code>Carts</code> object. This method will return 
+     * <code>true</code> <b>if and only if</b> the <code>IProtocolClient.Type</code>
+     * in <code>IProtocolClient</code> object included herein is permitted and 
+     * the operation of update is completed successfully.</p>
+     * 
+     * @param client  <code>IProtocolClient</code> object to execute this method.
+     * @param cart   <code>Carts</code> object to be updated.
+     * @return Result of client object.
+     * @throws java.rmi.RemoteException A <code>RemoteException</code> is the
+     *                                  common superclass for a number of
+     *                                  communication-related exceptions that
+     *                                  may occur during the execution of a
+     *                                  remote method call.
+     */
+    @Override
+    public Boolean updateCart(IProtocolClient client, Carts cart) throws RemoteException{
+        Boolean isSuccess = false;
+        if(isClientAuthenticated(client)) {
+            entityController = InfestPersistence.getControllerInstance(InfestPersistence.Entity.CARTS);
+            switch(client.getType()) {
+                case CUSTOMER:
+                    setStatus("updateCart(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
+                    try {
+                        entityController.update(cart);
+                    } catch (NonexistentEntityException ex) {
+                        setStatus("updateCart(): " + client.getType().name() + " client on request: Caught non-existent entity exception.");
+                        Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, "Caught non-existent entity exception.", ex);
+                    } catch (Exception ex) {
+                        setStatus("updateCart(): " + client.getType().name() + " client on request: Caught an exception.");
+                        Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, "Caught an exception.", ex);
+                    }
+                    isSuccess = true;
+                    break;
+                default:
+                    setStatus("updateCart(): Server denied request from a/an " + client.getType().name() + " client. This client type IS NOT PERMITTED to request this method.");
+                    isSuccess = false;
+                    break;
+            }
+        } else {
+            setStatus("updateCart(): Server denied request from an UN-AUTHENTICATED " + client.getType().name() + " client.");
             isSuccess = false;
         }
         return isSuccess;
