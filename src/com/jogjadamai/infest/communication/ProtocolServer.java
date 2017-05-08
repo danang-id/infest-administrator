@@ -266,15 +266,15 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                 case CUSTOMER:
                     setStatus("createOrder(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
                     entityController.create(order);
-//                    Menus menu = order.getIdmenu();
-//                    menu.setStock((order.getIdmenu().getStock()) - (order.getTotal()));
-//                    try {
-//                        InfestPersistence.getControllerInstance(InfestPersistence.Entity.MENUS).update(menu);
-//                    } catch (NonexistentEntityException ex) {
-//                        Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, null, ex);
-//                    } catch (Exception ex) {
-//                        Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, null, ex);
-//                    }
+                    Menus menu = order.getIdmenu();
+                    menu.setStock((order.getIdmenu().getStock()) - (order.getTotal()));
+                    try {
+                        InfestPersistence.getControllerInstance(InfestPersistence.Entity.MENUS).update(menu);
+                    } catch (NonexistentEntityException ex) {
+                        Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (Exception ex) {
+                        Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                     break;
                 default:
                     setStatus("createOrder(): UNAUTHORIZED client is requesting this method. Server denied the request.");
