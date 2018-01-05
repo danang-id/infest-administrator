@@ -16,6 +16,7 @@
 package com.jogjadamai.infest.administrator;
 
 
+
 /**
  * <h1>class <code>Administrator</code></h1>
  * <p><code>Administrator</code> is a controller class containing all the business
@@ -367,9 +368,12 @@ public final class Administrator {
     }
     
     protected void openDocumentation() {
-        javax.swing.JOptionPane.showMessageDialog((activeFrame == ViewFrame.MAIN) ? mainFrame : signInFrame, 
-            "Documentation of this program is not yet available. Please check on further release.\n\nThank you!",
-            "INFEST: Documentation", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        java.io.File docFile = new java.io.File("Infest-Documentation.pdf");
+        try {
+            java.awt.Desktop.getDesktop().open(docFile);
+        } catch (java.io.IOException ex) {
+            System.err.println("[INFEST] " +  getNowTime() + ": " + ex);
+        }
     }
     
     protected void changePassword() {

@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -39,14 +40,13 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.SecureRandom;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -74,6 +74,8 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
     private final SecureRandom SECURE_RANDOM;
     private static ProtocolServer INSTANCE;
     private final List<IProtocolClient> CLIENT_LIST;
+    
+    private final File file;
     
     private InfestEntityController entityController;
     private Boolean isServerActive;
@@ -104,6 +106,16 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
         SECURE_RANDOM = new SecureRandom();
         CLIENT_LIST = new ArrayList<IProtocolClient>();
         isServerActive = false;
+        file = new File("log\\ProtocolServer.log");
+        File directory = new File("log");
+        if (!directory.exists()) {
+            directory.mkdir();
+        }
+        try {
+            file.createNewFile();
+        } catch (IOException ex) {
+            System.err.println("[INFEST] " + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(LocalDateTime.now()) + ": " + ex.getLocalizedMessage());
+        }
         initiateServer();
     }
     
@@ -118,7 +130,14 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
     }
 
     private void setStatus(String status) {
-        System.out.println("[INFEST] " + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(LocalDateTime.now()) + ": " + status);
+        String toWrite = "[INFEST] " + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(LocalDateTime.now()) + ": " + status;
+        System.out.println(toWrite);
+        try (FileWriter writer = new FileWriter(file, true)) {
+            writer.write(toWrite);
+            writer.flush();
+        }catch (SecurityException | IOException ex) {
+            System.err.println("[INFEST] " + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(LocalDateTime.now()) + ": " + ex.getLocalizedMessage());
+        } 
     }
     
     /**
@@ -266,10 +285,13 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                 case CUSTOMER:
                     setStatus("createOrder(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
                     entityController.create(order);
-                    Menus menu = order.getIdmenu();
-                    menu.setStock((order.getIdmenu().getStock()) - (order.getTotal()));
+                    entityController = InfestPersistence.getControllerInstance(InfestPersistence.Entity.MENUS);
+                    Menus menu = (Menus) entityController.read(order.getIdmenu().getId());
+                    int newStock = menu.getStock() - order.getTotal();
+                    setStatus("createOrder(): Menu update trigered with new stock (old: " + menu.getStock() + ", new: " + newStock + ").");
+                    menu.setStock(newStock);
                     try {
-                        InfestPersistence.getControllerInstance(InfestPersistence.Entity.MENUS).update(menu);
+                        entityController.update(menu);
                     } catch (NonexistentEntityException ex) {
                         Logger.getLogger(ProtocolServer.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (Exception ex) {
@@ -799,7 +821,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
      */
     @Override
     public List<FinanceReport> readFinanceReport(IProtocolClient client) throws RemoteException {
-        return readFinanceReport(client, LocalDateTime.ofInstant(new Date(0).toInstant(), ZoneId.of("GMT+7")).toLocalDate(), true);
+        return readFinanceReport(client, new Date(0, 0, 1), true);
     }
 
     /**
@@ -823,18 +845,17 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
      *                                  remote method call.
      */
     @Override
-    public List<FinanceReport> readFinanceReport(IProtocolClient client, LocalDate localDate) throws RemoteException {
-        return readFinanceReport(client, localDate, false);
+    public List<FinanceReport> readFinanceReport(IProtocolClient client, Date date) throws RemoteException {
+        return readFinanceReport(client, date, false);
     }
     
-    private List<FinanceReport> readFinanceReport(IProtocolClient client, LocalDate localDate, Boolean allDate) throws RemoteException {
+    private List<FinanceReport> readFinanceReport(IProtocolClient client, Date date, Boolean allDate) throws RemoteException {
         List<FinanceReport> financeReport = new ArrayList<FinanceReport>();
         if(isClientAuthenticated(client)) {
             switch(client.getType()) {
                 case OPERATOR:
                     setStatus("readFinanceReport(): A/An " + client.getType().name() + " client is requesting this method. Server is now serving the client.");
                     List<Menus> menus = this.readAllMenu(client);
-                    Date date = Date.from(localDate.atStartOfDay().atZone(ZoneId.of("GMT+7")).toInstant());
                     for(Menus menu : menus) {
                         FinanceReport report = new FinanceReport();
                         report.setMenuId(menu.getId());
@@ -842,7 +863,7 @@ public final class ProtocolServer extends UnicastRemoteObject implements IProtoc
                         report.setMenuPrice(menu.getPrice());
                         report.setMenuStatus(menu.getStatus());
                         report.setMenuStatusdate(menu.getStatusDate());
-                        report.setOrderDate(allDate ? new Date(0) : date);
+                        report.setOrderDate(allDate ? new Date(0, 0, 1) : new Date(date.getYear(), date.getMonth(), date.getDate()));
                         report.setOrderTotal(0);
                         List<Orders> orders = menu.getOrdersList();
                         for(Orders order : orders) {
